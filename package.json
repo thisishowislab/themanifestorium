@@ -1,0 +1,39 @@
+```json
+{
+  "name": "manifestorium-site",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "next": "14.0.0",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "lucide-react": "^0.263.1"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.16",
+    "postcss": "^8.4.31",
+    "tailwindcss": "^3.3.5"
+  }
+}
+```
+- Click "Commit new file"
+
+#### File 2: `next.config.js`
+- Click "Add file" → "Create new file"
+- Type: `next.config.js`
+- Paste:
+```javascript
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  images: {
+    domains: ['images.ctfassets.net', 'downloads.ctfassets.net'],
+  },
+}
+
+module.exports = nextConfig
+```
