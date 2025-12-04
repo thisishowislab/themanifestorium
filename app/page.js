@@ -1,8 +1,7 @@
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { ShoppingCart, Menu, X, Zap, Cpu, Sparkles, ChevronRight, Instagram, Mail } from 'lucide-react';
+import { ShoppingCart, Menu, X, Zap, Cpu, Sparkles, ChevronRight, Instagram, Mail, Home, Briefcase, Store, MapPin, Heart, MessageCircle } from 'lucide-react';
 
 export default function ManifestoriumSite() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -19,7 +18,7 @@ export default function ManifestoriumSite() {
 
   const CONTENTFUL_SPACE_ID = 'nfc5otagjk9d';
   const CONTENTFUL_ACCESS_TOKEN = 'pNY83Bj4SI3qeOlhInXguFQBN8cqE1dT0VBr1mpAB7k';
-  const STRIPE_KEY = 'pk_live_51SJAagC2WMzoC8yUOEzNRf6XW4Q37cT5qkpklTSxo9vc3ukunfD7kArwq7NsaEelliZZDiv656iX9Iqgw2RRtMn900IT9qGL8H';
+  const STRIPE_KEY = 'pk_live_51SaVUcKCxmp5dExXiudIDA6FlC4mnY7IPB9XkwmQw8CQSpNMJKZ2ZPy7h0DWh1MXn6Oc3BLc6S6UtLSREIwkIen200pjJv3cqz';
 
   useEffect(() => {
     const handleScroll = () => setScrollY(window.scrollY);
@@ -185,12 +184,13 @@ export default function ManifestoriumSite() {
     setFormData({ name: '', email: '', message: '' });
   };
 
-  const Nav = ({ section, children }) => (
+  const Nav = ({ section, icon: Icon, children }) => (
     <button
       onClick={() => { setActiveSection(section); setMenuOpen(false); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-      className={`px-4 py-2 transition ${activeSection === section ? 'text-cyan-400 font-bold' : 'text-gray-300 hover:text-white'}`}
+      className={`flex flex-col items-center gap-1 px-4 py-2 transition ${activeSection === section ? 'text-cyan-400' : 'text-gray-300 hover:text-white'}`}
     >
-      {children}
+      <Icon size={24} />
+      <span className="text-xs">{children}</span>
     </button>
   );
 
@@ -206,12 +206,12 @@ export default function ManifestoriumSite() {
             </h1>
           </button>
           <div className="hidden md:flex gap-2">
-            <Nav section="home">Home</Nav>
-            <Nav section="portfolio">Portfolio</Nav>
-            <Nav section="shop">Shop</Nav>
-            <Nav section="tours">Tours</Nav>
-            <Nav section="support">Support</Nav>
-            <Nav section="contact">Contact</Nav>
+            <Nav section="home" icon={Home}>Home</Nav>
+            <Nav section="portfolio" icon={Briefcase}>Portfolio</Nav>
+            <Nav section="shop" icon={Store}>Shop</Nav>
+            <Nav section="tours" icon={MapPin}>Tours</Nav>
+            <Nav section="support" icon={Heart}>Support</Nav>
+            <Nav section="contact" icon={MessageCircle}>Contact</Nav>
           </div>
           <button className="md:hidden text-cyan-400" onClick={() => setMenuOpen(!menuOpen)}>
             {menuOpen ? <X size={28} /> : <Menu size={28} />}
@@ -219,12 +219,12 @@ export default function ManifestoriumSite() {
         </div>
         {menuOpen && (
           <div className="md:hidden bg-black/95 backdrop-blur-lg border-t border-cyan-500/30 p-6 flex flex-col gap-2">
-            <Nav section="home">Home</Nav>
-            <Nav section="portfolio">Portfolio</Nav>
-            <Nav section="shop">Shop</Nav>
-            <Nav section="tours">Tours</Nav>
-            <Nav section="support">Support</Nav>
-            <Nav section="contact">Contact</Nav>
+            <Nav section="home" icon={Home}>Home</Nav>
+            <Nav section="portfolio" icon={Briefcase}>Portfolio</Nav>
+            <Nav section="shop" icon={Store}>Shop</Nav>
+            <Nav section="tours" icon={MapPin}>Tours</Nav>
+            <Nav section="support" icon={Heart}>Support</Nav>
+            <Nav section="contact" icon={MessageCircle}>Contact</Nav>
           </div>
         )}
       </nav>
@@ -271,8 +271,7 @@ export default function ManifestoriumSite() {
             <div className="mt-16 p-8 bg-gradient-to-r from-purple-900/30 to-cyan-900/30 rounded-2xl border border-cyan-500/30 backdrop-blur-sm">
               <p className="text-lg leading-relaxed">
                 <span className="text-cyan-400 font-bold">Everything is an experiment.</span> 
-                {' '}You're invited to participate, not spectate. Improvisation is law, tech is a paintbrush, 
-                and your weirdest ideas are suddenly fair game.
+                {' '}You're invited to participate, not spectate. Improvisation is law, tech is a paintbrush, and your weirdest ideas are suddenly fair game.
               </p>
             </div>
           </div>
@@ -497,7 +496,6 @@ export default function ManifestoriumSite() {
             ) : donationTiers.length > 0 ? (
               <div className="grid md:grid-cols-3 gap-6 mb-8">
                 {donationTiers.map((tier, idx) => {
-                  const emojis = ['☕', '⚡', '🚀', '✨', '🎨', '🔮'];
                   const colors = [
                     'border-cyan-400 hover:bg-cyan-500/10',
                     'border-purple-400 hover:bg-purple-500/10',
@@ -510,11 +508,10 @@ export default function ManifestoriumSite() {
                       onClick={() => tier.stripePriceId ? handleCheckout(tier.stripePriceId, tier.name) : alert('Add Stripe Price ID in Contentful')}
                       className={`p-6 rounded-xl border-2 transition-all hover:scale-105 ${colors[idx % 3]}`}
                     >
-                      <div className="text-3xl mb-2">{emojis[idx % emojis.length]}</div>
-                      <div className="text-2xl font-bold text-cyan-400">${tier.price}</div>
-                      <div className="text-sm font-semibold text-gray-300 mt-2">{tier.name}</div>
+                      <div className="text-4xl font-bold text-cyan-400 mb-2">${tier.price}</div>
+                      <div className="text-base font-semibold text-white mt-2">{tier.name}</div>
                       {tier.description && (
-                        <div className="text-xs text-gray-400 mt-2">{tier.description}</div>
+                        <div className="text-xs text-gray-400 mt-2 line-clamp-3">{tier.description}</div>
                       )}
                     </button>
                   );
@@ -713,4 +710,4 @@ export default function ManifestoriumSite() {
       </footer>
     </div>
   );
-}
+  }
