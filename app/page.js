@@ -38,70 +38,106 @@ export default function ManifestoriumSite() {
   };
 
   const fetchContentfulData = async () => {
-    try {
-      const response = await fetch(
-        `https://cdn.contentful.com/spaces/${CONTENTFUL_SPACE_ID}/environments/master/entries?access_token=${CONTENTFUL_ACCESS_TOKEN}&include=10`
-      );
-      const data = await response.json();
-      
-      const assetMap = {};
-      data.includes?.Asset?.forEach(asset => assetMap[asset.sys.id] = asset);
-      
-      const prods = [], port = [], trs = [], tiers = [];
-      
-      data.items.forEach(item => {
-        const type = item.sys.contentType?.sys?.id;
-        const f = item.fields;
-        const imgField = f.productImage || f.tourImage || f.image;
-        const img = imgField?.sys ? getImageUrl(assetMap[imgField.sys.id]) : null;
-        
-        if (type === 'marketplaceProduct') {
-          prods.push({
-            id: item.sys.id,
-            name: f.productName || f.ProductName || 'Product',
-            price: Number(f.price || 0),
-            description: f.productDescription || f.ProductDescription || '',
-            image: img,
-            stripePriceId: f.stripePriceId || f.stripePriceID
-          });
-        } else if (type === 'tour') {
-          trs.push({
-            id: item.sys.id,
-            name: f.tourName || f.TourName || 'Tour',
-            price: Number(f.price || 25),
-            description: f.tourDescription || f.TourDescription || '',
-            image: img,
-            stripePriceId: f.stripePriceId
-          });
-        } else if (type === 'donationTier') {
-          tiers.push({
-            id: item.sys.id,
-            name: f.tierName || f.TierName || 'Support',
-            price: Number(f.price || 10),
-            description: f.tierDescription || '',
-            stripePriceId: f.stripePriceId
-          });
-        } else {
-          port.push({
-            id: item.sys.id,
-            title: f.title || f.name || 'Untitled',
-            desc: f.description || '',
-            tech: f.technologies || f.tech || '',
-            image: img
-          });
-        }
-      });
-      
-      setProducts(prods);
-      setTours(trs);
-      setDonationTiers(tiers);
-      setPortfolioItems(port);
-      setLoading(false);
-    } catch (error) {
-      console.error('Error:', error);
-      setLoading(false);
+  try {
+    setLoading(true);
+    
+    const response = await fetch(
+      `https://cdn.contentful.com/spaces/${CONTENTFUL_SPACE_ID}/environments/master/entries?access_token=${CONTENTFUL_ACCESS_TOKEN}&include=10`
+    );
+    
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    
+    const data = await response.json();
+    console.log('FULL CONTENTFUL DATA:', data); // Debug log
+    
+    const assetMap = {};
+    if (data.includes?.Asset) {
+      data.includes.Asset.forEach(asset => assetMap[asset.sys.id] = asset);
     }
-  };
+    
+    const prods = [], port = [], trs = [], tiers = [];
+    
+    data.items.forEach(item => {
+      const type = item.sys.contentType?.sys?.id;
+      const f = item.fields;
+      
+      console.log('Processing item:', type, f); // Debug log
+      
+      // Get image - try ALL possible field names
+      const imgField = f.productImage || f.ProductImage || f['Product Image'] || 
+                       f.tourImage || f.TourImage || f['Tour Image'] ||
+                       f.image || f.Image;
+      const img = imgField?.sys ? getImageUrl(assetMap[imgField.sys.id]) : null;
+      
+      // MARKETPLACE PRODUCT
+      if (type === 'marketplaceProduct') {
+        const product = {
+          id: item.sys.id,
+          name: f.productName || f.ProductName || f['Product Name'] || f.name || f.Name || 'Untitled Product',
+          price: Number(f.price || f.Price || 0),
+          description: f.productDescription || f.ProductDescription || f['Product Description'] || f.description || f.Description || '',
+          image: img,
+          stripePriceId: f.stripePriceId || f.stripePriceID || f['Stripe Price ID'] || f.StripePriceID || f.StripePriceId
+        };
+        console.log('Found product:', product);
+        prods.push(product);
+      } 
+      // TOUR
+      else if (type === 'tour') {
+        const tour = {
+          id: item.sys.id,
+          name: f.tourName || f.TourName || f['Tour Name'] || f.name || f.Name || 'Untitled Tour',
+          price: Number(f.price || f.Price || 25),
+          description: f.tourDescription || f.TourDescription || f['Tour Description'] || f.description || f.Description || '',
+          image: img,
+          stripePriceId: f.stripePriceId || f.stripePriceID || f['Stripe Price ID']
+        };
+        console.log('Found tour:', tour);
+        trs.push(tour);
+      } 
+      // DONATION TIER
+      else if (type === 'donationTier') {
+        const tier = {
+          id: item.sys.id,
+          name: f.tierName || f.TierName || f['Tier Name'] || f.name || f.Name || 'Support',
+          price: Number(f.price || f.Price || 10),
+          description: f.tierDescription || f.TierDescription || f['Tier Description'] || f.description || f.Description || '',
+          stripePriceId: f.stripePriceId || f.stripePriceID || f['Stripe Price ID']
+        };
+        console.log('Found donation tier:', tier);
+        tiers.push(tier);
+      } 
+      // PORTFOLIO (anything else with an image or title)
+      else {
+        const portfolio = {
+          id: item.sys.id,
+          title: f.title || f.Title || f.name || f.Name || 'Untitled',
+          desc: f.description || f.Description || '',
+          tech: f.technologies || f.Technologies || f.tech || f.Tech || '',
+          image: img
+        };
+        console.log('Found portfolio item:', portfolio);
+        port.push(portfolio);
+      }
+    });
+    
+    console.log('FINAL RESULTS:');
+    console.log('Products:', prods);
+    console.log('Tours:', trs);
+    console.log('Donation Tiers:', tiers);
+    console.log('Portfolio:', port);
+    
+    setProducts(prods);
+    setTours(trs);
+    setDonationTiers(tiers);
+    setPortfolioItems(port);
+    setLoading(false);
+  } catch (error) {
+    console.error('Error fetching Contentful data:', error);
+    setLoading(false);
+  }
+};
+
 
   const handleCheckout = async (priceId) => {
     if (!priceId) {
