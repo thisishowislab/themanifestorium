@@ -18,7 +18,7 @@ export default function ManifestoriumSite() {
 
   const CONTENTFUL_SPACE_ID = 'nfc5otagjk9d';
   const CONTENTFUL_ACCESS_TOKEN = 'pNY83Bj4SI3qeOlhInXguFQBN8cqE1dT0VBr1mpAB7k';
-  const STRIPE_KEY = 'pk_live_51SaVUcKCxmp5dExXiudIDA6FlC4mnY7IPB9XkwmQw8CQSpNMJKZ2ZPy7h0DWh1MXn6Oc3BLc6S6UtLSREIwkIen200pjJv3cqz';
+  const STRIPE_KEY = 'pk_live_51SJAagC2WMzoC8yUOEzNRf6XW4Q37cT5qkpklTSxo9vc3ukunfD7kArwq7NsaEelliZZDiv656iX9Iqgw2RRtMn900IT9qGL8H';
 
   useEffect(() => {
     const handleScroll = () => setScrollY(window.scrollY);
@@ -271,7 +271,8 @@ export default function ManifestoriumSite() {
             <div className="mt-16 p-8 bg-gradient-to-r from-purple-900/30 to-cyan-900/30 rounded-2xl border border-cyan-500/30 backdrop-blur-sm">
               <p className="text-lg leading-relaxed">
                 <span className="text-cyan-400 font-bold">Everything is an experiment.</span> 
-                {' '}You're invited to participate, not spectate. Improvisation is law, tech is a paintbrush, and your weirdest ideas are suddenly fair game.
+                {' '}You're invited to participate, not spectate. Improvisation is law, tech is a paintbrush, 
+                and your weirdest ideas are suddenly fair game.
               </p>
             </div>
           </div>
@@ -710,4 +711,4 @@ export default function ManifestoriumSite() {
       </footer>
     </div>
   );
-  }
+                  }
