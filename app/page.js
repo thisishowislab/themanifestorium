@@ -13,6 +13,7 @@ export default function ManifestoriumSite() {
   const [tours, setTours] = useState([]);
   const [donationTiers, setDonationTiers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [formData, setFormData] = useState({ name: '', email: '', message: '' });
   const [formStatus, setFormStatus] = useState('');
 
@@ -23,10 +24,17 @@ export default function ManifestoriumSite() {
   useEffect(() => {
     const handleScroll = () => setScrollY(window.scrollY);
     window.addEventListener('scroll', handleScroll);
-    const script = document.createElement('script');
-    script.src = 'https://js.stripe.com/v3/';
-    script.async = true;
-    document.head.appendChild(script);
+    
+    // Load Stripe script
+    if (!document.querySelector('script[src="https://js.stripe.com/v3/"]')) {
+      const script = document.createElement('script');
+      script.src = 'https://js.stripe.com/v3/';
+      script.async = true;
+      script.onload = () => console.log('✅ Stripe.js loaded');
+      script.onerror = () => console.error('❌ Failed to load Stripe.js');
+      document.head.appendChild(script);
+    }
+    
     fetchContentfulData();
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
@@ -145,34 +153,54 @@ export default function ManifestoriumSite() {
     }
   };
 
-  const handleCheckout = async (priceId, itemName) => {
+  const handleCheckout = async (priceId, itemName, itemPrice) => {
+    console.log('🛒 CHECKOUT STARTED');
+    console.log('Price ID:', priceId);
+    console.log('Item:', itemName, '-', itemPrice);
+    
     if (!priceId) {
-      alert(`Please add a Stripe Price ID for "${itemName}" in Contentful, or contact us to purchase!`);
-      setActiveSection('contact');
+      alert(`Missing Stripe Price ID for "${itemName}".`);
       return;
     }
     
+    if (!priceId.startsWith('price_')) {
+      alert(`Invalid Price ID format: ${priceId}\n\nShould start with "price_"`);
+      return;
+    }
+    
+    if (!STRIPE_KEY) {
+      alert('⚠️ Stripe key not configured!\n\nGo to Vercel → Settings → Environment Variables\nAdd: NEXT_PUBLIC_STRIPE_KEY');
+      return;
+    }
+    
+    console.log('Stripe Key loaded:', STRIPE_KEY.substring(0, 15) + '...');
+    
     try {
-      const stripe = window.Stripe?.(STRIPE_KEY);
-      if (!stripe) {
-        alert('Loading payment system... Please try again in a moment.');
+      if (!window.Stripe) {
+        alert('Stripe not loaded. Please refresh and try again.');
         return;
       }
       
-      const { error } = await stripe.redirectToCheckout({
+      console.log('Initializing Stripe...');
+      const stripe = window.Stripe(STRIPE_KEY);
+      
+      console.log('Redirecting to Stripe Checkout...');
+      console.log('Using Price ID:', priceId);
+      
+      const result = await stripe.redirectToCheckout({
         lineItems: [{ price: priceId, quantity: 1 }],
         mode: 'payment',
-        successUrl: window.location.origin + '?success=true',
-        cancelUrl: window.location.origin
+        successUrl: `${window.location.origin}?success=true`,
+        cancelUrl: window.location.origin,
       });
       
-      if (error) {
-        alert('Payment error. Please contact us directly!');
-        setActiveSection('contact');
+      if (result.error) {
+        console.error('❌ Stripe Error:', result.error);
+        alert(`Stripe Error: ${result.error.message}`);
       }
     } catch (error) {
-      alert('Unable to process payment. Please contact us!');
-      setActiveSection('contact');
+      console.error('❌ Error:', error);
+      alert(`Error: ${error.message}`);
     }
   };
 
@@ -382,7 +410,7 @@ export default function ManifestoriumSite() {
                       <div className="flex items-center justify-between">
                         <span className="text-2xl font-bold text-purple-400">${product.price}</span>
                         <button 
-                          onClick={() => handleCheckout(product.stripePriceId, product.name)}
+                          onClick={() => handleCheckout(product.stripePriceId, product.name, product.price)}
                           className="px-4 py-2 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-lg font-semibold hover:scale-105 transition-transform"
                         >
                           Buy Now
@@ -453,7 +481,7 @@ export default function ManifestoriumSite() {
                       <div className="flex items-center justify-between">
                         <span className="text-3xl font-bold text-purple-400">${tour.price}</span>
                         <button 
-                          onClick={() => tour.stripePriceId ? handleCheckout(tour.stripePriceId, tour.name) : setActiveSection('contact')}
+                          onClick={() => tour.stripePriceId ? handleCheckout(tour.stripePriceId, tour.name, tour.price) : setActiveSection('contact')}
                           className="px-6 py-2 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-lg font-semibold hover:scale-105 transition-transform"
                         >
                           Book Now
@@ -506,14 +534,16 @@ export default function ManifestoriumSite() {
                   return (
                     <button
                       key={tier.id}
-                      onClick={() => tier.stripePriceId ? handleCheckout(tier.stripePriceId, tier.name) : alert('Add Stripe Price ID in Contentful')}
-                      className={`p-6 rounded-xl border-2 transition-all hover:scale-105 ${colors[idx % 3]}`}
+                      onClick={() => tier.stripePriceId ? handleCheckout(tier.stripePriceId, tier.name, tier.price) : alert('Add Stripe Price ID in Contentful')}
+                      className={`p-6 rounded-xl border-2 transition-all hover:scale-105 ${colors[idx % 3]} min-h-[200px] flex flex-col justify-between`}
                     >
-                      <div className="text-4xl font-bold text-cyan-400 mb-2">${tier.price}</div>
-                      <div className="text-base font-semibold text-white mt-2">{tier.name}</div>
-                      {tier.description && (
-                        <div className="text-xs text-gray-400 mt-2 line-clamp-3">{tier.description}</div>
-                      )}
+                      <div>
+                        <div className="text-4xl font-bold text-cyan-400 mb-2">${tier.price}</div>
+                        <div className="text-base font-semibold text-white mt-2 mb-3">{tier.name}</div>
+                        {tier.description && (
+                          <div className="text-xs text-gray-400 leading-relaxed">{tier.description}</div>
+                        )}
+                      </div>
                     </button>
                   );
                 })}
@@ -698,7 +728,7 @@ export default function ManifestoriumSite() {
             <Sparkles className="text-cyan-400" size={24} />
             <span className="font-bold">The Manifestorium</span>
           </div>
-          <p className="text-gray-400 text-sm">© 2024 For Magical Use Only. All rights reserved.</p>
+          <p className="text-gray-400 text-sm">© 2025 The Manifestorium • Slab City, CA</p>
           <div className="flex gap-4">
             <a href="https://instagram.com/themanifestorium" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-cyan-400 transition-colors">
               <Instagram size={20} />
@@ -711,4 +741,4 @@ export default function ManifestoriumSite() {
       </footer>
     </div>
   );
-                  }
+          }
