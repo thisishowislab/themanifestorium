@@ -154,38 +154,42 @@ export default function ManifestoriumSite() {
   };
 
   const handleCheckout = async (priceId, itemName, itemPrice) => {
-    console.log('🛒 CHECKOUT STARTED');
-    console.log('Price ID:', priceId);
-    console.log('Item:', itemName, '-', itemPrice);
+    // Show ALL the debug info
+    const debugInfo = `
+🛒 CHECKOUT DEBUG INFO:
+━━━━━━━━━━━━━━━━━━━━━━
+Item: ${itemName}
+Price: $${itemPrice}
+Price ID: ${priceId}
+━━━━━━━━━━━━━━━━━━━━━━
+Stripe Key (first 20): ${STRIPE_KEY ? STRIPE_KEY.substring(0, 20) : 'MISSING'}
+Stripe Key exists: ${!!STRIPE_KEY}
+window.Stripe exists: ${!!window.Stripe}
+━━━━━━━━━━━━━━━━━━━━━━
+    `;
+    
+    console.log(debugInfo);
+    alert(debugInfo);
     
     if (!priceId) {
-      alert(`Missing Stripe Price ID for "${itemName}".`);
-      return;
-    }
-    
-    if (!priceId.startsWith('price_')) {
-      alert(`Invalid Price ID format: ${priceId}\n\nShould start with "price_"`);
+      alert(`Missing Price ID for "${itemName}"`);
       return;
     }
     
     if (!STRIPE_KEY) {
-      alert('⚠️ Stripe key not configured!\n\nGo to Vercel → Settings → Environment Variables\nAdd: NEXT_PUBLIC_STRIPE_KEY');
+      alert('❌ STRIPE KEY IS MISSING!\n\nCheck Vercel environment variables.');
       return;
     }
     
-    console.log('Stripe Key loaded:', STRIPE_KEY.substring(0, 15) + '...');
-    
     try {
       if (!window.Stripe) {
-        alert('Stripe not loaded. Please refresh and try again.');
+        alert('Stripe.js not loaded. Refresh the page.');
         return;
       }
       
-      console.log('Initializing Stripe...');
       const stripe = window.Stripe(STRIPE_KEY);
       
-      console.log('Redirecting to Stripe Checkout...');
-      console.log('Using Price ID:', priceId);
+      alert('About to redirect to Stripe...\n\nIf nothing happens, check the browser console for errors.');
       
       const result = await stripe.redirectToCheckout({
         lineItems: [{ price: priceId, quantity: 1 }],
@@ -195,12 +199,29 @@ export default function ManifestoriumSite() {
       });
       
       if (result.error) {
-        console.error('❌ Stripe Error:', result.error);
-        alert(`Stripe Error: ${result.error.message}`);
+        const errorMsg = `
+❌ STRIPE ERROR:
+━━━━━━━━━━━━━━━━━━━━━━
+${result.error.message}
+━━━━━━━━━━━━━━━━━━━━━━
+Type: ${result.error.type}
+Code: ${result.error.code || 'none'}
+━━━━━━━━━━━━━━━━━━━━━━
+Price ID used: ${priceId}
+        `;
+        console.error(errorMsg);
+        alert(errorMsg);
       }
     } catch (error) {
-      console.error('❌ Error:', error);
-      alert(`Error: ${error.message}`);
+      const errorMsg = `
+❌ JAVASCRIPT ERROR:
+━━━━━━━━━━━━━━━━━━━━━━
+${error.message}
+━━━━━━━━━━━━━━━━━━━━━━
+Full error: ${error}
+      `;
+      console.error(errorMsg);
+      alert(errorMsg);
     }
   };
 
@@ -741,4 +762,4 @@ export default function ManifestoriumSite() {
       </footer>
     </div>
   );
-          }
+}
