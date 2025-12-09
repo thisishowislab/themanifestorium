@@ -19,7 +19,7 @@ export default function ManifestoriumSite() {
 
   const CONTENTFUL_SPACE_ID = 'nfc5otagjk9d';
   const CONTENTFUL_ACCESS_TOKEN = 'pNY83Bj4SI3qeOlhInXguFQBN8cqE1dT0VBr1mpAB7k';
-  const STRIPE_KEY = 'pk_live_51SJAagC2WMzoC8yUOEzNRf6XW4Q37cT5qkpklTSxo9vc3ukunfD7kArwq7NsaEelliZZDiv656iX9Iqgw2RRtMn900IT9qGL8H';
+  const STRIPE_KEY = 'pk_live_51SaVUcKCxmp5dExXiudIDA6FlC4mnY7IPB9XkwmQw8CQSpNMJKZ2ZPy7h0DWh1MXn6Oc3BLc6S6UtLSREIwkIen200pjJv3cqz';
 
   useEffect(() => {
     const handleScroll = () => setScrollY(window.scrollY);
