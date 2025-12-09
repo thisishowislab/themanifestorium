@@ -1,9 +1,7 @@
-// app/api/checkout/route.js
-
 export async function POST(req) {
   try {
     const body = await req.json();
-    const { priceId } = body || {};
+    const { priceId, mode, quantity } = body || {};
 
     if (!priceId) {
       return new Response(
@@ -20,12 +18,18 @@ export async function POST(req) {
       );
     }
 
+    const checkoutMode = mode === "subscription" ? "subscription" : "payment";
+    const qty = quantity && quantity > 0 ? quantity : 1;
+
     const params = new URLSearchParams();
-    params.append("mode", "payment");
-    params.append("success_url", "https://formagicaluseonly.com?success=true");
-    params.append("cancel_url", "https://formagicaluseonly.com?canceled=true");
+    params.append("mode", checkoutMode);
+    params.append("success_url", "https://themanifestorium.vercel.app?success=true");
+    params.append("cancel_url", "https://themanifestorium.vercel.app?canceled=true");
     params.append("line_items[0][price]", priceId);
-    params.append("line_items[0][quantity]", "1");
+    params.append("line_items[0][quantity]", String(qty));
+
+    // 👇 we’ll add promo codes here in a second:
+    params.append("allow_promotion_codes", "true");
 
     const stripeRes = await fetch("https://api.stripe.com/v1/checkout/sessions", {
       method: "POST",
