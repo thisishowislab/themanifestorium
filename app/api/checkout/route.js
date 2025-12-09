@@ -3,7 +3,7 @@
 export async function POST(req) {
   try {
     const body = await req.json();
-    const priceId = body.priceId;
+    const { priceId } = body || {};
 
     if (!priceId) {
       return new Response(
@@ -20,11 +20,10 @@ export async function POST(req) {
       );
     }
 
-    // Call Stripe's Checkout Session API directly via fetch
     const params = new URLSearchParams();
     params.append("mode", "payment");
-    params.append("success_url", "https://themanifestorium.vercel.app/success");
-    params.append("cancel_url", "https://themanifestorium.vercel.app/cancel");
+    params.append("success_url", "https://formagicaluseonly.com?success=true");
+    params.append("cancel_url", "https://formagicaluseonly.com?canceled=true");
     params.append("line_items[0][price]", priceId);
     params.append("line_items[0][quantity]", "1");
 
