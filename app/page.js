@@ -525,7 +525,7 @@ const handleCheckout = async (
                   return (
                     <button
                       key={tier.id}
-                      onClick={() => tier.stripePriceId ? handleCheckout(tier.stripePriceId, tier.name, tier.price) : alert('Add Stripe Price ID in Contentful')}
+                      onClick={() => tier.stripePriceId ? handleCheckout(tier.stripePriceId, tier.name, tier.price, "subscription") : alert('Add Stripe Price ID in Contentful')}
                       className={`p-6 rounded-xl border-2 transition-all hover:scale-105 ${colors[idx % 3]} min-h-[200px] flex flex-col justify-between`}
                     >
                       <div>
