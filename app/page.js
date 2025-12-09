@@ -153,77 +153,43 @@ export default function ManifestoriumSite() {
     }
   };
 
-  const handleCheckout = async (priceId, itemName, itemPrice) => {
-    // Show ALL the debug info
-    const debugInfo = `
-🛒 CHECKOUT DEBUG INFO:
-━━━━━━━━━━━━━━━━━━━━━━
-Item: ${itemName}
-Price: $${itemPrice}
-Price ID: ${priceId}
-━━━━━━━━━━━━━━━━━━━━━━
-Stripe Key (first 20): ${STRIPE_KEY ? STRIPE_KEY.substring(0, 20) : 'MISSING'}
-Stripe Key exists: ${!!STRIPE_KEY}
-window.Stripe exists: ${!!window.Stripe}
-━━━━━━━━━━━━━━━━━━━━━━
-    `;
-    
-    console.log(debugInfo);
-    alert(debugInfo);
-    
-    if (!priceId) {
-      alert(`Missing Price ID for "${itemName}"`);
+const handleCheckout = async (priceId, itemName, itemPrice) => {
+  if (!priceId) {
+    alert(`Missing Price ID for "${itemName}"`);
+    return;
+  }
+
+  try {
+    const res = await fetch("/api/checkout", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ priceId }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      const msg = data.error || "Checkout failed";
+      alert(`❌ STRIPE ERROR\n\n${msg}\n\nItem: ${itemName}\nPrice ID: ${priceId}`);
+      console.error("Stripe error:", msg, "for price:", priceId);
       return;
     }
-    
-    if (!STRIPE_KEY) {
-      alert('❌ STRIPE KEY IS MISSING!\n\nCheck Vercel environment variables.');
+
+    if (!data.url) {
+      alert("Stripe did not return a checkout URL.");
+      console.error("No checkout URL in response:", data);
       return;
     }
-    
-    try {
-      if (!window.Stripe) {
-        alert('Stripe.js not loaded. Refresh the page.');
-        return;
-      }
+
+    // Redirect to Stripe Checkout
+    window.location.href = data.url;
+  } catch (error) {
+    const msg = error?.message || String(error);
+    alert(`❌ NETWORK / SERVER ERROR\n\n${msg}`);
+    console.error("Checkout exception:", error);
+  }
+};
       
-      const stripe = window.Stripe(STRIPE_KEY);
-      
-      alert('About to redirect to Stripe...\n\nIf nothing happens, check the browser console for errors.');
-      
-      const result = await stripe.redirectToCheckout({
-        lineItems: [{ price: priceId, quantity: 1 }],
-        mode: 'payment',
-        successUrl: `${window.location.origin}?success=true`,
-        cancelUrl: window.location.origin,
-      });
-      
-      if (result.error) {
-        const errorMsg = `
-❌ STRIPE ERROR:
-━━━━━━━━━━━━━━━━━━━━━━
-${result.error.message}
-━━━━━━━━━━━━━━━━━━━━━━
-Type: ${result.error.type}
-Code: ${result.error.code || 'none'}
-━━━━━━━━━━━━━━━━━━━━━━
-Price ID used: ${priceId}
-        `;
-        console.error(errorMsg);
-        alert(errorMsg);
-      }
-    } catch (error) {
-      const errorMsg = `
-❌ JAVASCRIPT ERROR:
-━━━━━━━━━━━━━━━━━━━━━━
-${error.message}
-━━━━━━━━━━━━━━━━━━━━━━
-Full error: ${error}
-      `;
-      console.error(errorMsg);
-      alert(errorMsg);
-    }
-  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
