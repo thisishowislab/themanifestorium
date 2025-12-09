@@ -153,7 +153,13 @@ export default function ManifestoriumSite() {
     }
   };
 
-const handleCheckout = async (priceId, itemName, itemPrice) => {
+const handleCheckout = async (
+  priceId,
+  itemName,
+  itemPrice,
+  mode = "payment",
+  quantity = 1
+) => {
   if (!priceId) {
     alert(`Missing Price ID for "${itemName}"`);
     return;
@@ -163,7 +169,7 @@ const handleCheckout = async (priceId, itemName, itemPrice) => {
     const res = await fetch("/api/checkout", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ priceId }),
+      body: JSON.stringify({ priceId, mode, quantity }),
     });
 
     const data = await res.json();
@@ -181,7 +187,6 @@ const handleCheckout = async (priceId, itemName, itemPrice) => {
       return;
     }
 
-    // Redirect to Stripe Checkout
     window.location.href = data.url;
   } catch (error) {
     const msg = error?.message || String(error);
@@ -189,7 +194,6 @@ const handleCheckout = async (priceId, itemName, itemPrice) => {
     console.error("Checkout exception:", error);
   }
 };
-      
 
   const handleSubmit = (e) => {
     e.preventDefault();
