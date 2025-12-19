@@ -13,9 +13,20 @@ export default function ProductCard({ product }) {
     attributes = [],
   } = product;
 
-  const imageUrl = image?.fields?.file?.url
-    ? `https:${image.fields.file.url}`
-    : null;
+ const imageUrls = (product.images || [])
+  .map(a => a?.fields?.file?.url)
+  .filter(Boolean)
+  .map(u => `https:${u}`);
+
+{imageUrls.length > 0 && (
+  <div className="grid gap-2 grid-cols-2">
+    {imageUrls.map((url, idx) => (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img key={url} src={url} alt={product.altText || product.name} className="w-full rounded-lg object-cover" />
+    ))}
+  </div>
+)}
+
 
   return (
     <article className="product-card border rounded-lg p-3 bg-black/40 text-white flex flex-col gap-2">
