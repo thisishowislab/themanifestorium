@@ -25,26 +25,42 @@ function getImageUrl(asset) {
   return url.startsWith("//") ? `https:${url}` : url;
 }
 
-function toKey(fields) {
-  // BEST: slug. If your products don't have slug yet, fallback to name fields.
-  return (
-    fields?.slug ||
-    fields?.productSlug ||
-    fields?.productKey ||
-    fields?.key ||
-    fields?.productName ||
-    fields?.tourName ||
-    fields?.tierName ||
-    fields?.name ||
-    null
-  );
+/**
+ * Supports:
+ * - productImages (array of Assets)
+ * - productImage (single Asset)
+ * - image (single Asset)
+ */
+function extractImages(fields, assetMap) {
+  const images = [];
+
+  // productImages: array of links
+  const arr = fields?.productImages;
+  if (Array.isArray(arr)) {
+    for (const ref of arr) {
+      const id = ref?.sys?.id;
+      if (!id) continue;
+      const url = getImageUrl(assetMap[id]);
+      if (url) images.push(url);
+    }
+  }
+
+  // fallbacks: single image fields
+  const single = fields?.productImage || fields?.image || fields?.tourImage;
+  const singleId = single?.sys?.id;
+  if (images.length === 0 && singleId) {
+    const url = getImageUrl(assetMap[singleId]);
+    if (url) images.push(url);
+  }
+
+  return images;
 }
 
 /**
- * Extracts a "default" price + stripePriceId from variantUx.
- * Supports BOTH:
+ * Extract default price + stripePriceId from variantUx.
+ * Supports:
  * 1) New schema: { defaultKey, variants: { k: {price, stripePriceId} } }
- * 2) Legacy schema (for transition): { price, stripePriceId } or { amount, priceId }
+ * 2) Legacy schema during migration: { price, stripePriceId } or { amount, priceId }
  */
 function extractDefaultVariant(variantUxRaw) {
   const v = safeJson(variantUxRaw);
@@ -62,7 +78,7 @@ function extractDefaultVariant(variantUxRaw) {
     return { price, stripePriceId };
   }
 
-  // Legacy single-variant schema
+  // Legacy schema
   const price = Number(v.price ?? v.amount ?? 0);
   const stripePriceId = v.stripePriceId ?? v.priceId ?? null;
 
@@ -111,17 +127,15 @@ export async function GET() {
     for (const item of data.items || []) {
       const f = item.fields || {};
 
-      // image from common fields
-      const imgField = f.productImage || f.tourImage || f.image;
-      const img = imgField?.sys?.id ? getImageUrl(assetMap[imgField.sys.id]) : null;
+      const images = extractImages(f, assetMap);
+      const image = images[0] || null; // keep backwards compatibility for your grid
 
-      // Pull default pricing directly from THIS product/tour/tier entry’s variantUx
       const vx = extractDefaultVariant(f.variantUx);
       const mergedPrice = Number(vx?.price ?? f.price ?? 0);
       const mergedPriceId = vx?.stripePriceId ?? f.stripePriceId ?? null;
 
-      // Classify by field presence (keeps your system stable without relying on Content Type IDs)
-      const isProduct = Boolean(f.productName || f.productDescription || f.productImage);
+      // classify by field presence
+      const isProduct = Boolean(f.productName || f.productDescription || f.productImage || (Array.isArray(f.productImages) && f.productImages.length));
       const isTour = Boolean(f.tourName || f.tourDescription || f.tourImage);
       const isTier = Boolean(f.tierName || f.tierDescription);
 
@@ -132,10 +146,10 @@ export async function GET() {
           name: f.productName || "Untitled Product",
           price: mergedPrice,
           description: f.productDescription || "",
-          image: img,
+          image,
+          images,                 // ✅ NEW: array for product page
           stripePriceId: mergedPriceId,
-          // optional: expose full variants later without changing the API again
-          variantUx: safeJson(f.variantUx) || null,
+          variantUx: safeJson(f.variantUx) || null, // ✅ expose full variants
         });
         continue;
       }
@@ -147,7 +161,8 @@ export async function GET() {
           name: f.tourName || f.name || "Untitled Tour",
           price: mergedPrice || 25,
           description: f.tourDescription || f.description || "",
-          image: img,
+          image,
+          images,
           stripePriceId: mergedPriceId,
           variantUx: safeJson(f.variantUx) || null,
         });
@@ -167,23 +182,19 @@ export async function GET() {
       }
 
       // Portfolio fallback
-      if (f.title || f.name || img) {
+      if (f.title || f.name || image) {
         portfolioItems.push({
           id: item.sys.id,
           title: f.title || f.name || "Untitled",
           desc: f.description || "",
           tech: f.technologies || f.tech || "",
-          image: img,
+          image,
+          images,
         });
       }
     }
 
-    return NextResponse.json({
-      products,
-      tours,
-      donationTiers,
-      portfolioItems,
-    });
+    return NextResponse.json({ products, tours, donationTiers, portfolioItems });
   } catch (err) {
     const msg = err?.message || String(err);
     return NextResponse.json({ error: "Catalog error", details: msg }, { status: 500 });
