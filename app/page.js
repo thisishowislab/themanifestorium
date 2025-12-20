@@ -491,4 +491,165 @@ export default function ManifestoriumSite() {
             )}
 
             <div className="p-6 bg-black/50 rounded-xl border border-cyan-500/30 mb-6">
-              <label className="block text-sm font-semibold text-cyan-400 mb-3">
+              <label className="block text-sm font-semibold text-cyan-400 mb-3">Custom Amount</label>
+              <div className="flex gap-4">
+                <div className="relative flex-1">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xl">$</span>
+                  <input
+                    type="number"
+                    value={donationAmount}
+                    onChange={(e) => setDonationAmount(e.target.value)}
+                    placeholder="Enter amount"
+                    className="w-full pl-10 pr-4 py-3 bg-black/50 border border-cyan-500/30 rounded-lg focus:border-cyan-400 focus:outline-none text-white text-lg"
+                  />
+                </div>
+                <button
+                  onClick={() => alert('Custom donations coming soon! Please contact us or choose a preset tier.')}
+                  className="px-8 py-3 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-lg font-bold hover:scale-105 transition-transform shadow-lg shadow-cyan-500/50 whitespace-nowrap"
+                >
+                  Contribute
+                </button>
+              </div>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="p-6 bg-gradient-to-br from-cyan-900/20 to-purple-900/20 rounded-xl border border-cyan-500/30">
+                <h4 className="text-lg font-bold text-cyan-400 mb-3">What Your Support Funds</h4>
+                <ul className="space-y-2 text-gray-300 text-sm">
+                  <li>• 3D printer filament & maintenance</li>
+                  <li>• Laser cutter supplies</li>
+                  <li>• Salvaged material processing</li>
+                  <li>• Off-grid power systems</li>
+                  <li>• Workshop tools & safety equipment</li>
+                  <li>• Community art programs</li>
+                </ul>
+              </div>
+
+              <div className="p-6 bg-gradient-to-br from-purple-900/20 to-pink-900/20 rounded-xl border border-purple-500/30">
+                <h4 className="text-lg font-bold text-purple-400 mb-3">Other Ways to Support</h4>
+                <ul className="space-y-2 text-gray-300 text-sm">
+                  <li>• Buy art from our shop</li>
+                  <li>• Book a local tour</li>
+                  <li>• Share our work on social media</li>
+                  <li>• Donate materials or equipment</li>
+                  <li>• Volunteer your skills</li>
+                  <li>• Commission custom pieces</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* CONTACT SECTION */}
+      {activeSection === 'contact' && (
+        <section className="min-h-screen pt-32 pb-20 px-6">
+          <div className="max-w-4xl mx-auto">
+            <h2 className="text-5xl font-black mb-8 bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
+              Get In Touch
+            </h2>
+
+            <div className="grid md:grid-cols-2 gap-8">
+              <div className="space-y-6">
+                <div className="p-8 bg-gradient-to-br from-cyan-900/20 to-purple-900/20 rounded-2xl border border-cyan-500/30">
+                  <h3 className="text-2xl font-bold text-cyan-400 mb-4">Let's Create Together</h3>
+                  <p className="text-gray-300 mb-6">
+                    Have a wild idea? Need custom tech art? Want to collaborate or book a tour?
+                    We're here for it all.
+                  </p>
+
+                  <div className="space-y-4">
+                    <a href="mailto:thisishowislab@gmail.com" className="flex items-center gap-3 text-purple-300 hover:text-purple-400 transition-colors">
+                      <Mail size={24} />
+                      <span className="text-sm">thisishowislab@gmail.com</span>
+                    </a>
+                    <a href="https://instagram.com/themanifestorium" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 text-purple-300 hover:text-purple-400 transition-colors">
+                      <Instagram size={24} />
+                      <span>@themanifestorium</span>
+                    </a>
+                  </div>
+                </div>
+
+                <div className="p-6 bg-gradient-to-br from-purple-900/20 to-pink-900/20 rounded-2xl border border-purple-500/30">
+                  <h4 className="text-lg font-bold text-purple-400 mb-3">Location</h4>
+                  <p className="text-gray-300 text-sm">
+                    Slab City, California<br />
+                    Near Salvation Mountain<br />
+                    Open by appointment
+                  </p>
+                </div>
+              </div>
+
+              <div className="p-8 bg-gradient-to-br from-purple-900/20 to-pink-900/20 rounded-2xl border border-purple-500/30">
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-cyan-400 mb-2">Name</label>
+                    <input
+                      type="text"
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      required
+                      className="w-full px-4 py-3 bg-black/50 border border-cyan-500/30 rounded-lg focus:border-cyan-400 focus:outline-none text-white"
+                      placeholder="Your name"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-cyan-400 mb-2">Email</label>
+                    <input
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      required
+                      className="w-full px-4 py-3 bg-black/50 border border-cyan-500/30 rounded-lg focus:border-cyan-400 focus:outline-none text-white"
+                      placeholder="your@email.com"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-cyan-400 mb-2">Message</label>
+                    <textarea
+                      rows={5}
+                      value={formData.message}
+                      onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                      required
+                      className="w-full px-4 py-3 bg-black/50 border border-cyan-500/30 rounded-lg focus:border-cyan-400 focus:outline-none text-white resize-none"
+                      placeholder="Tell us about your idea..."
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={formStatus === 'sending'}
+                    className="w-full px-6 py-3 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-lg font-bold hover:scale-105 transition-transform shadow-lg shadow-cyan-500/50 disabled:opacity-50"
+                  >
+                    {formStatus === 'sending' ? 'Sending...' : 'Send Message'}
+                  </button>
+                  {formStatus === 'success' && (
+                    <p className="text-green-400 text-center text-sm">Opening your email client...</p>
+                  )}
+                </form>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* FOOTER */}
+      <footer className="border-t border-cyan-500/30 py-8 px-6 bg-black/50">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+          <div className="flex items-center gap-3">
+            <Sparkles className="text-cyan-400" size={24} />
+            <span className="font-bold">The Manifestorium</span>
+          </div>
+          <p className="text-gray-400 text-sm">© 2025 The Manifestorium • Slab City, CA</p>
+          <div className="flex gap-4">
+            <a href="https://instagram.com/themanifestorium" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-cyan-400 transition-colors">
+              <Instagram size={20} />
+            </a>
+            <a href="mailto:thisishowislab@gmail.com" className="text-gray-400 hover:text-cyan-400 transition-colors">
+              <Mail size={20} />
+            </a>
+          </div>
+        </div>
+      </footer>
+    </div>
+  );
+                         }
