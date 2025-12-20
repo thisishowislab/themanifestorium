@@ -3,18 +3,6 @@ import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
 
-/**
- * This endpoint:
- * - Fetches Contentful entries (using env vars already in Vercel)
- * - Builds an Asset map for images
- * - Builds a pricing lookup from your Contentful JSON field: variantUx
- * - Merges pricing onto products/tours/donation tiers by key (slug preferred)
- *
- * IMPORTANT:
- * - Your pricing JSON field is: variantUx
- * - That JSON should contain at least: { price: number, priceId: "price_..." }
- */
-
 const SPACE_ID = process.env.CONTENTFUL_SPACE_ID;
 const ACCESS_TOKEN = process.env.CONTENTFUL_ACCESS_TOKEN;
 
@@ -38,7 +26,7 @@ function getImageUrl(asset) {
 }
 
 function toKey(fields) {
-  // BEST: slug. If your products don't have slug yet, it will fallback to productName/tourName/tierName.
+  // BEST: slug. If your products don't have slug yet, fallback to name fields.
   return (
     fields?.slug ||
     fields?.productSlug ||
@@ -50,6 +38,36 @@ function toKey(fields) {
     fields?.name ||
     null
   );
+}
+
+/**
+ * Extracts a "default" price + stripePriceId from variantUx.
+ * Supports BOTH:
+ * 1) New schema: { defaultKey, variants: { k: {price, stripePriceId} } }
+ * 2) Legacy schema (for transition): { price, stripePriceId } or { amount, priceId }
+ */
+function extractDefaultVariant(variantUxRaw) {
+  const v = safeJson(variantUxRaw);
+  if (!v) return null;
+
+  // New schema
+  if (v.variants && typeof v.variants === "object") {
+    const defaultKey = v.defaultKey || "default";
+    const chosen = v.variants[defaultKey] || v.variants.default || null;
+    if (!chosen) return null;
+
+    const price = Number(chosen.price ?? chosen.amount ?? 0);
+    const stripePriceId = chosen.stripePriceId ?? chosen.priceId ?? null;
+
+    return { price, stripePriceId };
+  }
+
+  // Legacy single-variant schema
+  const price = Number(v.price ?? v.amount ?? 0);
+  const stripePriceId = v.stripePriceId ?? v.priceId ?? null;
+
+  if (!price && !stripePriceId) return null;
+  return { price, stripePriceId };
 }
 
 export async function GET() {
@@ -85,20 +103,6 @@ export async function GET() {
       }
     }
 
-    // Build pricing lookup from entries that have variantUx JSON
-    // variantUx should look like: { price: 25, priceId: "price_123" }
-    const pricingByKey = {};
-
-    for (const item of data.items || []) {
-      const f = item.fields || {};
-      const parsed = safeJson(f.variantUx);
-      const key = toKey(f);
-
-      if (key && parsed && (parsed.priceId || parsed.stripePriceId || parsed.price || parsed.amount)) {
-        pricingByKey[String(key)] = parsed;
-      }
-    }
-
     const products = [];
     const tours = [];
     const donationTiers = [];
@@ -111,13 +115,12 @@ export async function GET() {
       const imgField = f.productImage || f.tourImage || f.image;
       const img = imgField?.sys?.id ? getImageUrl(assetMap[imgField.sys.id]) : null;
 
-      const key = toKey(f);
-      const pr = key ? pricingByKey[String(key)] : null;
+      // Pull default pricing directly from THIS product/tour/tier entry’s variantUx
+      const vx = extractDefaultVariant(f.variantUx);
+      const mergedPrice = Number(vx?.price ?? f.price ?? 0);
+      const mergedPriceId = vx?.stripePriceId ?? f.stripePriceId ?? null;
 
-      const mergedPrice = Number(pr?.price ?? pr?.amount ?? f.price ?? 0);
-      const mergedPriceId = pr?.priceId ?? pr?.stripePriceId ?? f.stripePriceId ?? null;
-
-      // Classify by field presence (avoids brittle contentType ID problems)
+      // Classify by field presence (keeps your system stable without relying on Content Type IDs)
       const isProduct = Boolean(f.productName || f.productDescription || f.productImage);
       const isTour = Boolean(f.tourName || f.tourDescription || f.tourImage);
       const isTier = Boolean(f.tierName || f.tierDescription);
@@ -131,6 +134,8 @@ export async function GET() {
           description: f.productDescription || "",
           image: img,
           stripePriceId: mergedPriceId,
+          // optional: expose full variants later without changing the API again
+          variantUx: safeJson(f.variantUx) || null,
         });
         continue;
       }
@@ -144,6 +149,7 @@ export async function GET() {
           description: f.tourDescription || f.description || "",
           image: img,
           stripePriceId: mergedPriceId,
+          variantUx: safeJson(f.variantUx) || null,
         });
         continue;
       }
@@ -155,6 +161,7 @@ export async function GET() {
           price: mergedPrice || 10,
           description: f.tierDescription || f.description || "",
           stripePriceId: mergedPriceId,
+          variantUx: safeJson(f.variantUx) || null,
         });
         continue;
       }
