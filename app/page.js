@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { ShoppingCart, Menu, X, Zap, Cpu, Sparkles, ChevronRight, Instagram, Mail, Home, Briefcase, Store, MapPin, Heart, MessageCircle } from 'lucide-react';
 
 export default function ManifestoriumSite() {
@@ -287,44 +288,74 @@ export default function ManifestoriumSite() {
               </div>
             ) : (
               <div className="grid md:grid-cols-3 gap-6">
-                {products.map((product) => (
-                  <div
-                    key={product.id}
-                    className="bg-gradient-to-br from-gray-900 to-black rounded-2xl border border-purple-500/30 hover:border-purple-400 transition-all duration-300 overflow-hidden group hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/30"
-                  >
-                    <div className="h-48 bg-gradient-to-br from-cyan-500/20 to-purple-500/20 flex items-center justify-center overflow-hidden">
-                      {product.image ? (
-                        <img
-                          src={product.image}
-                          alt={product.name}
-                          className="w-full h-full object-cover group-hover:scale-110 transition-transform"
-                        />
-                      ) : (
-                        <div className="text-7xl">🎴</div>
-                      )}
-                    </div>
-                    <div className="p-6">
-                      <h3 className="text-xl font-bold text-white mb-2">{product.name}</h3>
-                      {product.description && (
-                        <p className="text-gray-400 text-sm mb-3 line-clamp-2">{product.description}</p>
-                      )}
-                      <div className="flex items-center justify-between">
-                        <span className="text-2xl font-bold text-purple-400">${product.price}</span>
-                        <button
-                          onClick={() => handleCheckout(product.stripePriceId, product.name, product.price)}
-                          className="px-4 py-2 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-lg font-semibold hover:scale-105 transition-transform"
-                        >
-                          Buy Now
-                        </button>
+                {products.map((product) => {
+                  const href = product.slug ? `/products/${product.slug}` : null;
+
+                  const CardContent = (
+                    <>
+                      <div className="h-48 bg-gradient-to-br from-cyan-500/20 to-purple-500/20 flex items-center justify-center overflow-hidden">
+                        {product.image ? (
+                          <img
+                            src={product.image}
+                            alt={product.name}
+                            className="w-full h-full object-cover group-hover:scale-110 transition-transform"
+                          />
+                        ) : (
+                          <div className="text-7xl">🎴</div>
+                        )}
                       </div>
-                      {!product.stripePriceId && (
-                        <p className="text-xs text-pink-300 mt-3">
-                          (This item is missing a Stripe Price ID in pricing JSON: variantUx)
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                ))}
+
+                      <div className="p-6">
+                        <h3 className="text-xl font-bold text-white mb-2">{product.name}</h3>
+                        {product.description && (
+                          <p className="text-gray-400 text-sm mb-3 line-clamp-2">{product.description}</p>
+                        )}
+                        <div className="flex items-center justify-between">
+                          <span className="text-2xl font-bold text-purple-400">${product.price}</span>
+                          <button
+                            onClick={(e) => {
+                              // Prevent the card click navigation when pressing Buy Now
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleCheckout(product.stripePriceId, product.name, product.price);
+                            }}
+                            className="px-4 py-2 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-lg font-semibold hover:scale-105 transition-transform"
+                          >
+                            Buy Now
+                          </button>
+                        </div>
+                        {!product.stripePriceId && (
+                          <p className="text-xs text-pink-300 mt-3">
+                            (This item is missing a Stripe Price ID in pricing JSON: variantUx)
+                          </p>
+                        )}
+                      </div>
+                    </>
+                  );
+
+                  // If there's no slug yet, keep it as a normal non-linked card
+                  if (!href) {
+                    return (
+                      <div
+                        key={product.id}
+                        className="bg-gradient-to-br from-gray-900 to-black rounded-2xl border border-purple-500/30 hover:border-purple-400 transition-all duration-300 overflow-hidden group hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/30"
+                      >
+                        {CardContent}
+                      </div>
+                    );
+                  }
+
+                  // Linked card (entire card clickable, same visual styling)
+                  return (
+                    <Link
+                      key={product.id}
+                      href={href}
+                      className="bg-gradient-to-br from-gray-900 to-black rounded-2xl border border-purple-500/30 hover:border-purple-400 transition-all duration-300 overflow-hidden group hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/30 block"
+                    >
+                      {CardContent}
+                    </Link>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -652,4 +683,4 @@ export default function ManifestoriumSite() {
       </footer>
     </div>
   );
-                         }
+              }
