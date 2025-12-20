@@ -1,11 +1,12 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { useParams } from 'next/navigation';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useParams, useRouter } from 'next/navigation';
+import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 
 export default function ProductPage() {
   const params = useParams();
+  const router = useRouter();
   const slug = params?.slug;
 
   const [product, setProduct] = useState(null);
@@ -34,11 +35,16 @@ export default function ProductPage() {
           const dk = vx.defaultKey || 'default';
           const firstKey = vx.variants[dk] ? dk : Object.keys(vx.variants)[0];
           setVariantKey(firstKey || null);
+
+          // If default variant has imageIndex, use it
+          const chosen = firstKey ? vx.variants[firstKey] : null;
+          const idx = Number(chosen?.imageIndex);
+          if (Number.isFinite(idx)) setActiveImageIdx(idx);
+          else setActiveImageIdx(0);
         } else {
           setVariantKey(null);
+          setActiveImageIdx(0);
         }
-
-        setActiveImageIdx(0);
       } catch (e) {
         console.error('Product load error:', e);
         setProduct(null);
@@ -57,19 +63,36 @@ export default function ProductPage() {
   }, [product]);
 
   const chosenVariant = useMemo(() => {
-    if (!variants) return null;
-    if (!variantKey) return null;
+    if (!variants || !variantKey) return null;
     return variants[variantKey] || null;
   }, [variants, variantKey]);
 
   const displayPrice = chosenVariant?.price ?? product?.price ?? 0;
   const displayPriceId = chosenVariant?.stripePriceId ?? product?.stripePriceId ?? null;
 
-  const images = product?.images?.length ? product.images : (product?.image ? [product.image] : []);
-  const activeImg = images[activeImageIdx] || null;
+  // images are now array of sets: { original, grid, main, thumb }
+  const images = product?.images?.length ? product.images : [];
+  const activeSet = images[activeImageIdx] || null;
 
-  const prevImage = () => setActiveImageIdx((i) => (i - 1 + images.length) % images.length);
-  const nextImage = () => setActiveImageIdx((i) => (i + 1) % images.length);
+  const activeMain = activeSet?.main || activeSet?.original || null;
+
+  const prevImage = () => {
+    if (!images.length) return;
+    setActiveImageIdx((i) => (i - 1 + images.length) % images.length);
+  };
+
+  const nextImage = () => {
+    if (!images.length) return;
+    setActiveImageIdx((i) => (i + 1) % images.length);
+  };
+
+  const onVariantChange = (newKey) => {
+    setVariantKey(newKey);
+
+    const v = variants?.[newKey];
+    const idx = Number(v?.imageIndex);
+    if (Number.isFinite(idx)) setActiveImageIdx(idx);
+  };
 
   const handleCheckout = async () => {
     if (!displayPriceId) {
@@ -79,10 +102,19 @@ export default function ProductPage() {
 
     try {
       setCheckoutLoading(true);
+
+      // Physical product? default true unless Contentful field says otherwise
+      const requireShipping = product?.isShippable !== false;
+
       const res = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ priceId: displayPriceId, mode: 'payment', quantity: 1 }),
+        body: JSON.stringify({
+          priceId: displayPriceId,
+          mode: 'payment',
+          quantity: 1,
+          requireShipping,
+        }),
       });
 
       const data = await res.json();
@@ -96,6 +128,10 @@ export default function ProductPage() {
     } finally {
       setCheckoutLoading(false);
     }
+  };
+
+  const backToShop = () => {
+    router.push('/?section=shop');
   };
 
   if (loading) {
@@ -113,6 +149,12 @@ export default function ProductPage() {
     return (
       <div className="min-h-screen bg-black text-white pt-28 px-6">
         <div className="max-w-4xl mx-auto py-20">
+          <button
+            onClick={backToShop}
+            className="mb-6 inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-cyan-500/30 hover:border-cyan-400"
+          >
+            <X size={18} /> Back to Shop
+          </button>
           <h1 className="text-3xl font-black text-cyan-400 mb-4">Product not found</h1>
           <p className="text-gray-400">This product slug doesn’t match anything in Contentful.</p>
         </div>
@@ -122,12 +164,27 @@ export default function ProductPage() {
 
   return (
     <div className="min-h-screen bg-black text-white pt-28 px-6">
+      {/* Fixed X/back */}
+      <button
+        onClick={backToShop}
+        className="fixed top-4 left-4 z-50 p-3 rounded-full bg-black/70 border border-cyan-500/30 hover:border-cyan-400 backdrop-blur"
+        aria-label="Back to Shop"
+      >
+        <X />
+      </button>
+
       <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-10">
         {/* Images */}
         <div className="bg-gradient-to-br from-gray-900 to-black rounded-2xl border border-purple-500/30 overflow-hidden">
           <div className="relative h-[360px] bg-gradient-to-br from-cyan-500/10 to-purple-500/10 flex items-center justify-center">
-            {activeImg ? (
-              <img src={activeImg} alt={product.name} className="w-full h-full object-cover" />
+            {activeMain ? (
+              <img
+                src={activeMain}
+                alt={product.name}
+                className="w-full h-full object-cover"
+                loading="eager"
+                decoding="async"
+              />
             ) : (
               <div className="text-7xl">🎴</div>
             )}
@@ -155,18 +212,27 @@ export default function ProductPage() {
           {/* Thumbnails */}
           {images.length > 1 && (
             <div className="p-3 flex gap-2 overflow-x-auto">
-              {images.map((url, idx) => (
-                <button
-                  key={url + idx}
-                  onClick={() => setActiveImageIdx(idx)}
-                  className={`h-16 w-16 flex-shrink-0 rounded-lg overflow-hidden border ${
-                    idx === activeImageIdx ? 'border-cyan-400' : 'border-purple-500/30'
-                  }`}
-                  aria-label={`Image ${idx + 1}`}
-                >
-                  <img src={url} alt={`${product.name} thumbnail ${idx + 1}`} className="w-full h-full object-cover" />
-                </button>
-              ))}
+              {images.map((set, idx) => {
+                const thumb = set?.thumb || set?.grid || set?.original || '';
+                return (
+                  <button
+                    key={(thumb || 'img') + idx}
+                    onClick={() => setActiveImageIdx(idx)}
+                    className={`h-16 w-16 flex-shrink-0 rounded-lg overflow-hidden border ${
+                      idx === activeImageIdx ? 'border-cyan-400' : 'border-purple-500/30'
+                    }`}
+                    aria-label={`Image ${idx + 1}`}
+                  >
+                    <img
+                      src={thumb}
+                      alt={`${product.name} thumbnail ${idx + 1}`}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>
@@ -191,7 +257,7 @@ export default function ProductPage() {
               <label className="block text-sm font-semibold text-cyan-400 mb-2">Choose a variant</label>
               <select
                 value={variantKey || ''}
-                onChange={(e) => setVariantKey(e.target.value)}
+                onChange={(e) => onVariantChange(e.target.value)}
                 className="w-full px-4 py-3 bg-black/50 border border-cyan-500/30 rounded-lg focus:border-cyan-400 focus:outline-none text-white"
               >
                 {Object.entries(variants).map(([key, v]) => (
@@ -215,6 +281,29 @@ export default function ProductPage() {
             <p className="text-xs text-pink-300 mt-3">
               Missing Stripe Price ID for this variant. Check variantUx JSON on the product entry.
             </p>
+          )}
+
+          {/* Extra fields */}
+          {(product.careInstructions || product.disclaimer) && (
+            <div className="mt-10 space-y-6">
+              {product.careInstructions && (
+                <div className="p-5 rounded-xl border border-cyan-500/20 bg-black/40">
+                  <h3 className="text-cyan-400 font-bold mb-2">Care Instructions</h3>
+                  <p className="text-gray-300 whitespace-pre-wrap leading-relaxed">
+                    {product.careInstructions}
+                  </p>
+                </div>
+              )}
+
+              {product.disclaimer && (
+                <div className="p-5 rounded-xl border border-purple-500/20 bg-black/40">
+                  <h3 className="text-purple-300 font-bold mb-2">Disclaimer</h3>
+                  <p className="text-gray-300 whitespace-pre-wrap leading-relaxed">
+                    {product.disclaimer}
+                  </p>
+                </div>
+              )}
+            </div>
           )}
         </div>
       </div>
