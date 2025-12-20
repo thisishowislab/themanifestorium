@@ -1,7 +1,19 @@
 // app/api/catalog/route.js
 import { NextResponse } from "next/server";
 
-export const runtime = "nodejs"; // IMPORTANT: ensures this runs server-side (not edge)
+export const runtime = "nodejs";
+
+/**
+ * This endpoint:
+ * - Fetches Contentful entries (using env vars already in Vercel)
+ * - Builds an Asset map for images
+ * - Builds a pricing lookup from your Contentful JSON field: variantUx
+ * - Merges pricing onto products/tours/donation tiers by key (slug preferred)
+ *
+ * IMPORTANT:
+ * - Your pricing JSON field is: variantUx
+ * - That JSON should contain at least: { price: number, priceId: "price_..." }
+ */
 
 const SPACE_ID = process.env.CONTENTFUL_SPACE_ID;
 const ACCESS_TOKEN = process.env.CONTENTFUL_ACCESS_TOKEN;
@@ -25,11 +37,26 @@ function getImageUrl(asset) {
   return url.startsWith("//") ? `https:${url}` : url;
 }
 
+function toKey(fields) {
+  // BEST: slug. If your products don't have slug yet, it will fallback to productName/tourName/tierName.
+  return (
+    fields?.slug ||
+    fields?.productSlug ||
+    fields?.productKey ||
+    fields?.key ||
+    fields?.productName ||
+    fields?.tourName ||
+    fields?.tierName ||
+    fields?.name ||
+    null
+  );
+}
+
 export async function GET() {
   try {
     if (!SPACE_ID || !ACCESS_TOKEN) {
       return NextResponse.json(
-        { error: "Missing Contentful env vars (CONTENTFUL_SPACE_ID / CONTENTFUL_ACCESS_TOKEN)" },
+        { error: "Missing Contentful env vars: CONTENTFUL_SPACE_ID / CONTENTFUL_ACCESS_TOKEN" },
         { status: 500 }
       );
     }
@@ -39,10 +66,11 @@ export async function GET() {
       `?access_token=${ACCESS_TOKEN}&include=10`;
 
     const response = await fetch(url, { cache: "no-store" });
+
     if (!response.ok) {
       const text = await response.text();
       return NextResponse.json(
-        { error: `Contentful error ${response.status}`, details: text.slice(0, 500) },
+        { error: `Contentful error ${response.status}`, details: text.slice(0, 600) },
         { status: 500 }
       );
     }
@@ -57,60 +85,45 @@ export async function GET() {
       }
     }
 
-    // ---- Collect pricing entries (your “JSON pricing file” in Contentful) ----
-    // We don’t assume the content type ID (because that was the trap).
-    // We detect pricing entries by the presence of a JSON-ish field.
-    const pricingByKey = {}; // key: slug or productKey -> { price, priceId }
+    // Build pricing lookup from entries that have variantUx JSON
+    // variantUx should look like: { price: 25, priceId: "price_123" }
+    const pricingByKey = {};
 
-    for (const item of data.items) {
+    for (const item of data.items || []) {
       const f = item.fields || {};
+      const parsed = safeJson(f.variantUx);
+      const key = toKey(f);
 
-      // Guess candidate fields where your pricing JSON might live
-      const jsonCandidate =
-        f.pricingJson ?? f.pricing ?? f.json ?? f.priceData ?? null;
-
-      const parsed = safeJson(jsonCandidate);
-
-      // We also need a key to match this pricing to a product
-      // Best key is slug. If you used another field, add it here.
-      const key =
-        f.slug ?? f.productSlug ?? f.productKey ?? f.key ?? f.productName ?? null;
-
-      if (key && parsed && (parsed.priceId || parsed.stripePriceId || parsed.price)) {
+      if (key && parsed && (parsed.priceId || parsed.stripePriceId || parsed.price || parsed.amount)) {
         pricingByKey[String(key)] = parsed;
       }
     }
 
-    // ---- Build products/tours/tiers, and MERGE pricing JSON ----
-    const prods = [];
+    const products = [];
     const tours = [];
-    const tiers = [];
-    const port = [];
+    const donationTiers = [];
+    const portfolioItems = [];
 
-    for (const item of data.items) {
+    for (const item of data.items || []) {
       const f = item.fields || {};
 
       // image from common fields
       const imgField = f.productImage || f.tourImage || f.image;
       const img = imgField?.sys?.id ? getImageUrl(assetMap[imgField.sys.id]) : null;
 
-      // A stable key used for pricing lookup:
-      const key = String(f.slug ?? f.productSlug ?? f.productKey ?? f.key ?? f.productName ?? "");
+      const key = toKey(f);
+      const pr = key ? pricingByKey[String(key)] : null;
 
-      // Pricing override from JSON “pricing file”
-      const pr = key ? pricingByKey[key] : null;
+      const mergedPrice = Number(pr?.price ?? pr?.amount ?? f.price ?? 0);
+      const mergedPriceId = pr?.priceId ?? pr?.stripePriceId ?? f.stripePriceId ?? null;
 
-      const mergedPrice = Number(
-        pr?.price ?? pr?.amount ?? f.price ?? 0
-      );
+      // Classify by field presence (avoids brittle contentType ID problems)
+      const isProduct = Boolean(f.productName || f.productDescription || f.productImage);
+      const isTour = Boolean(f.tourName || f.tourDescription || f.tourImage);
+      const isTier = Boolean(f.tierName || f.tierDescription);
 
-      const mergedPriceId =
-        pr?.priceId ?? pr?.stripePriceId ?? f.stripePriceId ?? null;
-
-      // ---- Field-based classification (avoids content type ID mismatch hell) ----
-      // Product
-      if (f.productName || f.productDescription) {
-        prods.push({
+      if (isProduct) {
+        products.push({
           id: item.sys.id,
           slug: f.slug || null,
           name: f.productName || "Untitled Product",
@@ -122,8 +135,7 @@ export async function GET() {
         continue;
       }
 
-      // Tour
-      if (f.tourName || f.tourDescription) {
+      if (isTour) {
         tours.push({
           id: item.sys.id,
           slug: f.slug || null,
@@ -136,9 +148,8 @@ export async function GET() {
         continue;
       }
 
-      // Donationերն
-      if (f.tierName || f.tierDescription) {
-        tiers.push({
+      if (isTier) {
+        donationTiers.push({
           id: item.sys.id,
           name: f.tierName || f.name || "Support",
           price: mergedPrice || 10,
@@ -150,7 +161,7 @@ export async function GET() {
 
       // Portfolio fallback
       if (f.title || f.name || img) {
-        port.push({
+        portfolioItems.push({
           id: item.sys.id,
           title: f.title || f.name || "Untitled",
           desc: f.description || "",
@@ -161,10 +172,10 @@ export async function GET() {
     }
 
     return NextResponse.json({
-      products: prods,
+      products,
       tours,
-      donationTiers: tiers,
-      portfolioItems: port,
+      donationTiers,
+      portfolioItems,
     });
   } catch (err) {
     const msg = err?.message || String(err);
