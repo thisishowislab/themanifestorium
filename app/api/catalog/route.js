@@ -29,13 +29,11 @@ function getImageUrl(asset) {
  * Supports:
  * - productImages (array of Assets)
  * - productImage (single Asset)
- * - image (single Asset)
- * - tourImage (single Asset)
+ * - image / tourImage (single Asset)
  */
 function extractImages(fields, assetMap) {
   const images = [];
 
-  // productImages: array of links
   const arr = fields?.productImages;
   if (Array.isArray(arr)) {
     for (const ref of arr) {
@@ -46,7 +44,6 @@ function extractImages(fields, assetMap) {
     }
   }
 
-  // fallback: single image fields
   const single = fields?.productImage || fields?.image || fields?.tourImage;
   const singleId = single?.sys?.id;
   if (images.length === 0 && singleId) {
@@ -60,8 +57,8 @@ function extractImages(fields, assetMap) {
 /**
  * Extract default price + stripePriceId from variantUx.
  * Supports:
- * 1) New schema: { defaultKey, variants: { k: { label, price, stripePriceId, imageIndex } } }
- * 2) Legacy schema during migration: { price, stripePriceId } or { amount, priceId }
+ * 1) New schema: { defaultKey, variants: { k: {price, stripePriceId, label, imageIndex?} } }
+ * 2) Legacy schema: { price, stripePriceId } or { amount, priceId }
  */
 function extractDefaultVariant(variantUxRaw) {
   const v = safeJson(variantUxRaw);
@@ -70,7 +67,8 @@ function extractDefaultVariant(variantUxRaw) {
   // New schema
   if (v.variants && typeof v.variants === "object") {
     const defaultKey = v.defaultKey || "default";
-    const chosen = v.variants[defaultKey] || v.variants.default || null;
+    const chosen =
+      v.variants?.[defaultKey] || v.variants?.default || v.variants?.[Object.keys(v.variants)[0]] || null;
     if (!chosen) return null;
 
     const price = Number(chosen.price ?? chosen.amount ?? 0);
@@ -87,26 +85,44 @@ function extractDefaultVariant(variantUxRaw) {
   return { price, stripePriceId };
 }
 
-function extractCategories(fields) {
-  // Try several possible Contentful field IDs
-  const raw =
-    fields?.categories ??
-    fields?.category ??
-    fields?.productCategories ??
-    fields?.productCategory ??
-    fields?.collection ??
-    fields?.collections ??
-    [];
+function normalizeCategories(fields) {
+  // supports: category (string), categories (array), productCategory, productCategories
+  const c1 = fields?.category;
+  const c2 = fields?.categories;
+  const c3 = fields?.productCategory;
+  const c4 = fields?.productCategories;
 
-  if (Array.isArray(raw)) {
-    return raw
-      .map((x) => (typeof x === "string" ? x.trim() : ""))
-      .filter(Boolean);
-  }
+  const raw = []
+    .concat(Array.isArray(c2) ? c2 : [])
+    .concat(Array.isArray(c4) ? c4 : [])
+    .concat(typeof c1 === "string" ? [c1] : [])
+    .concat(typeof c3 === "string" ? [c3] : []);
 
-  if (typeof raw === "string" && raw.trim()) return [raw.trim()];
+  // de-dupe + clean
+  const cleaned = raw
+    .map((x) => (typeof x === "string" ? x.trim() : ""))
+    .filter(Boolean);
 
-  return [];
+  return Array.from(new Set(cleaned));
+}
+
+function extractCommunity(fields) {
+  // supports multiple possible field names so you don't have to rename things
+  const eligible =
+    Boolean(fields?.communitySupported) ||
+    Boolean(fields?.communityEligible) ||
+    Boolean(fields?.communityOption) ||
+    Boolean(fields?.acceptsTrade) ||
+    false;
+
+  const note =
+    fields?.communityNote ||
+    fields?.communityDetails ||
+    fields?.tradeNote ||
+    fields?.exchangeNote ||
+    "";
+
+  return { communityEligible: eligible, communityNote: note };
 }
 
 export async function GET() {
@@ -134,7 +150,6 @@ export async function GET() {
 
     const data = await response.json();
 
-    // Build asset map
     const assetMap = {};
     if (data.includes?.Asset) {
       for (const asset of data.includes.Asset) {
@@ -151,17 +166,36 @@ export async function GET() {
       const f = item.fields || {};
 
       const images = extractImages(f, assetMap);
-      const image = images[0] || null; // backwards compatibility for grid cards
+      const image = images[0] || null;
 
       const vx = extractDefaultVariant(f.variantUx);
       const mergedPrice = Number(vx?.price ?? f.price ?? 0);
       const mergedPriceId = vx?.stripePriceId ?? f.stripePriceId ?? null;
 
-      // classify by field presence
+      const categories = normalizeCategories(f);
+      const community = extractCommunity(f);
+
+      const disclaimer =
+        f.disclaimer ||
+        f.productDisclaimer ||
+        f.legalDisclaimer ||
+        "";
+
+      const careInstructions =
+        f.careInstructions ||
+        f.care ||
+        f.productCare ||
+        "";
+
       const isProduct = Boolean(
-        f.productName || f.productDescription || f.productImage || (Array.isArray(f.productImages) && f.productImages.length)
+        f.productName ||
+          f.productDescription ||
+          f.productImage ||
+          (Array.isArray(f.productImages) && f.productImages.length)
       );
+
       const isTour = Boolean(f.tourName || f.tourDescription || f.tourImage);
+
       const isTier = Boolean(f.tierName || f.tierDescription);
 
       if (isProduct) {
@@ -175,13 +209,10 @@ export async function GET() {
           images,
           stripePriceId: mergedPriceId,
           variantUx: safeJson(f.variantUx) || null,
-
-          // ✅ categories for filtering
-          categories: extractCategories(f),
-
-          // ✅ extra fields (match your Contentful field IDs if different)
-          careInstructions: f.careInstructions || f.care || "",
-          disclaimer: f.disclaimer || f.disclaimerText || "",
+          categories,
+          ...community,
+          disclaimer,
+          careInstructions,
         });
         continue;
       }
@@ -197,6 +228,10 @@ export async function GET() {
           images,
           stripePriceId: mergedPriceId,
           variantUx: safeJson(f.variantUx) || null,
+          categories,
+          ...community,
+          disclaimer,
+          careInstructions,
         });
         continue;
       }
@@ -209,11 +244,14 @@ export async function GET() {
           description: f.tierDescription || f.description || "",
           stripePriceId: mergedPriceId,
           variantUx: safeJson(f.variantUx) || null,
+          categories,
+          ...community,
+          disclaimer,
+          careInstructions,
         });
         continue;
       }
 
-      // Portfolio fallback
       if (f.title || f.name || image) {
         portfolioItems.push({
           id: item.sys.id,
@@ -222,6 +260,7 @@ export async function GET() {
           tech: f.technologies || f.tech || "",
           image,
           images,
+          categories,
         });
       }
     }
