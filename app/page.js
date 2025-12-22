@@ -1,13 +1,9 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { ShoppingCart, Menu, X, Zap, Cpu, Sparkles, ChevronRight, Instagram, Mail, Home, Briefcase, Store, MapPin, Heart, MessageCircle, Search } from 'lucide-react';
+import { Menu, X, Zap, Cpu, Sparkles, ChevronRight, Instagram, Mail, Home, Briefcase, Store, MapPin, Heart, MessageCircle } from 'lucide-react';
 
 export default function ManifestoriumSite() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState('home');
   const [scrollY, setScrollY] = useState(0);
@@ -17,22 +13,20 @@ export default function ManifestoriumSite() {
   const [tours, setTours] = useState([]);
   const [donationTiers, setDonationTiers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [formData, setFormData] = useState({ name: '', email: '', message: '' });
   const [formStatus, setFormStatus] = useState('');
-
-  // NEW: shop search
-  const [productQuery, setProductQuery] = useState('');
 
   useEffect(() => {
     const handleScroll = () => setScrollY(window.scrollY);
     window.addEventListener('scroll', handleScroll);
 
-    // Optional Stripe script (safe)
+    // Load Stripe script (optional)
     if (!document.querySelector('script[src="https://js.stripe.com/v3/"]')) {
       const script = document.createElement('script');
       script.src = 'https://js.stripe.com/v3/';
       script.async = true;
+      script.onload = () => console.log('✅ Stripe.js loaded');
+      script.onerror = () => console.error('❌ Failed to load Stripe.js');
       document.head.appendChild(script);
     }
 
@@ -40,19 +34,9 @@ export default function ManifestoriumSite() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // NEW: open specific section from URL query: /?section=shop
-  useEffect(() => {
-    const section = searchParams?.get('section');
-    if (section && ['home','portfolio','shop','tours','support','contact'].includes(section)) {
-      setActiveSection(section);
-      window.scrollTo({ top: 0, behavior: 'instant' });
-    }
-  }, [searchParams]);
-
   const fetchCatalogData = async () => {
     try {
       setLoading(true);
-
       const res = await fetch('/api/catalog', { method: 'GET' });
       const data = await res.json();
 
@@ -72,16 +56,9 @@ export default function ManifestoriumSite() {
     }
   };
 
-  const handleCheckout = async (
-    priceId,
-    itemName,
-    itemPrice,
-    mode = "payment",
-    quantity = 1,
-    requireShipping = false
-  ) => {
+  const handleCheckout = async (priceId, itemName, mode = "payment", quantity = 1) => {
     if (!priceId) {
-      alert(`Missing Price ID for "${itemName}"`);
+      alert(`Missing Stripe Price ID for "${itemName}"`);
       return;
     }
 
@@ -89,7 +66,7 @@ export default function ManifestoriumSite() {
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ priceId, mode, quantity, requireShipping }),
+        body: JSON.stringify({ priceId, mode, quantity }),
       });
 
       const data = await res.json();
@@ -132,20 +109,6 @@ export default function ManifestoriumSite() {
       <span className="text-xs">{children}</span>
     </button>
   );
-
-  const filteredProducts = useMemo(() => {
-    const q = productQuery.trim().toLowerCase();
-    if (!q) return products;
-    return products.filter(p => {
-      const hay = `${p?.name || ''} ${p?.description || ''}`.toLowerCase();
-      return hay.includes(q);
-    });
-  }, [products, productQuery]);
-
-  const openProduct = (product) => {
-    if (!product?.slug) return;
-    router.push(`/products/${product.slug}`);
-  };
 
   return (
     <div className="bg-black text-white min-h-screen">
@@ -260,13 +223,7 @@ export default function ManifestoriumSite() {
                   >
                     {item.image && (
                       <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity">
-                        <img
-                          src={item.image}
-                          alt={item.title}
-                          className="w-full h-full object-cover"
-                          loading="lazy"
-                          decoding="async"
-                        />
+                        <img src={item.image} alt={item.title} className="w-full h-full object-cover" loading="lazy" decoding="async" />
                       </div>
                     )}
                     <div className="relative z-10">
@@ -274,7 +231,7 @@ export default function ManifestoriumSite() {
                       <p className="text-gray-300 mb-4">{item.desc}</p>
                       {item.tech && (
                         <div className="flex flex-wrap gap-2">
-                          {item.tech.split(',').map((t, i) => (
+                          {String(item.tech).split(',').map((t, i) => (
                             <span key={i} className="px-3 py-1 bg-purple-500/20 text-purple-300 rounded-full text-sm">
                               {t.trim()}
                             </span>
@@ -297,115 +254,13 @@ export default function ManifestoriumSite() {
             <h2 className="text-5xl font-black mb-4 bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
               Shop
             </h2>
-            <p className="text-xl text-gray-400 mb-8">Own a piece of the weird and wonderful</p>
+            <p className="text-xl text-gray-400 mb-6">Own a piece of the weird and wonderful</p>
 
-            {/* Search bar */}
-            <div className="mb-10">
-              <div className="flex items-center gap-3 bg-black/50 border border-cyan-500/30 rounded-xl px-4 py-3">
-                <Search className="text-cyan-400" />
-                <input
-                  value={productQuery}
-                  onChange={(e) => setProductQuery(e.target.value)}
-                  placeholder="Search products…"
-                  className="w-full bg-transparent outline-none text-white placeholder:text-gray-500"
-                />
-              </div>
-              <p className="text-xs text-gray-500 mt-2">
-                Tip: keep product names unique-ish so search feels psychic.
-              </p>
-            </div>
-
-            {loading ? (
-              <div className="text-center py-20">
-                <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-400"></div>
-                <p className="text-gray-400 mt-4">Loading products...</p>
-              </div>
-            ) : filteredProducts.length === 0 ? (
-              <div className="text-center py-20 bg-gradient-to-br from-purple-900/20 to-pink-900/20 rounded-2xl border border-purple-500/30">
-                <p className="text-gray-300 text-lg mb-4">
-                  {products.length === 0 ? 'No products found in Contentful' : 'No products match your search'}
-                </p>
-                <p className="text-gray-400 mb-6">Make sure your products are Published in Contentful → Content</p>
-                <button
-                  onClick={() => setActiveSection('contact')}
-                  className="px-6 py-3 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-lg font-bold hover:scale-105 transition-transform"
-                >
-                  Contact Us About Custom Orders
-                </button>
-              </div>
-            ) : (
-              <div className="grid md:grid-cols-3 gap-6">
-                {filteredProducts.map((product) => {
-                  const clickable = Boolean(product.slug);
-
-                  return (
-                    <div
-                      key={product.id}
-                      role={clickable ? "button" : undefined}
-                      tabIndex={clickable ? 0 : undefined}
-                      onClick={() => clickable && openProduct(product)}
-                      onKeyDown={(e) => {
-                        if (!clickable) return;
-                        if (e.key === 'Enter' || e.key === ' ') openProduct(product);
-                      }}
-                      className={`bg-gradient-to-br from-gray-900 to-black rounded-2xl border border-purple-500/30 hover:border-purple-400 transition-all duration-300 overflow-hidden group hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/30 ${
-                        clickable ? 'cursor-pointer' : 'opacity-95'
-                      }`}
-                    >
-                      <div className="h-48 bg-gradient-to-br from-cyan-500/20 to-purple-500/20 flex items-center justify-center overflow-hidden">
-                        {product.image ? (
-                          <img
-                            src={product.image}
-                            alt={product.name}
-                            className="w-full h-full object-cover group-hover:scale-110 transition-transform"
-                            loading="lazy"
-                            decoding="async"
-                          />
-                        ) : (
-                          <div className="text-7xl">🎴</div>
-                        )}
-                      </div>
-
-                      <div className="p-6">
-                        <h3 className="text-xl font-bold text-white mb-2">{product.name}</h3>
-
-                        {product.description && (
-                          <p className="text-gray-400 text-sm mb-3 line-clamp-2">{product.description}</p>
-                        )}
-
-                        <div className="flex items-center justify-between">
-                          <span className="text-2xl font-bold text-purple-400">${product.price}</span>
-
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation(); // don’t trigger card navigation
-                              handleCheckout(product.stripePriceId, product.name, product.price, "payment", 1, true);
-                            }}
-                            className="px-4 py-2 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-lg font-semibold hover:scale-105 transition-transform"
-                            disabled={!product.stripePriceId}
-                            title={!product.stripePriceId ? "Missing Stripe Price ID" : "Buy now"}
-                          >
-                            Buy Now
-                          </button>
-                        </div>
-
-                        {!product.slug && (
-                          <p className="text-xs text-gray-500 mt-3">
-                            (No slug yet — add it in Contentful to enable product page.)
-                          </p>
-                        )}
-
-                        {!product.stripePriceId && (
-                          <p className="text-xs text-pink-300 mt-2">
-                            (Missing Stripe Price ID in variantUx)
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+            <ShopBrowser
+              loading={loading}
+              products={products}
+              onCheckout={(p) => handleCheckout(p.stripePriceId, p.name, "payment", 1)}
+            />
           </div>
         </section>
       )}
@@ -468,7 +323,11 @@ export default function ManifestoriumSite() {
                       <div className="flex items-center justify-between">
                         <span className="text-3xl font-bold text-purple-400">${tour.price}</span>
                         <button
-                          onClick={() => tour.stripePriceId ? handleCheckout(tour.stripePriceId, tour.name, tour.price, "payment", 1, false) : setActiveSection('contact')}
+                          onClick={() =>
+                            tour.stripePriceId
+                              ? handleCheckout(tour.stripePriceId, tour.name, "payment", 1)
+                              : setActiveSection('contact')
+                          }
                           className="px-6 py-2 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-lg font-semibold hover:scale-105 transition-transform"
                         >
                           Book Now
@@ -476,7 +335,7 @@ export default function ManifestoriumSite() {
                       </div>
                       {!tour.stripePriceId && (
                         <p className="text-xs text-pink-300 mt-3">
-                          (This tour is missing a Stripe Price ID in pricing JSON: variantUx)
+                          (This tour is missing a Stripe Price ID in variantUx)
                         </p>
                       )}
                     </div>
@@ -515,19 +374,21 @@ export default function ManifestoriumSite() {
                 <p className="text-gray-400 mt-4">Loading donation options...</p>
               </div>
             ) : donationTiers.length > 0 ? (
-              <div className="grid md:grid-cols-3 gap-6 mb-8">
+              // ✅ 2 columns on desktop (4 items => 2x2)
+              <div className="grid md:grid-cols-2 gap-6 mb-8">
                 {donationTiers.map((tier, idx) => {
                   const colors = [
                     'border-cyan-400 hover:bg-cyan-500/10',
                     'border-purple-400 hover:bg-purple-500/10',
-                    'border-pink-400 hover:bg-pink-500/10'
+                    'border-pink-400 hover:bg-pink-500/10',
+                    'border-cyan-400 hover:bg-cyan-500/10'
                   ];
 
                   return (
                     <button
                       key={tier.id}
-                      onClick={() => tier.stripePriceId ? handleCheckout(tier.stripePriceId, tier.name, tier.price, "payment", 1, false) : alert('Add Stripe Price ID in pricing JSON (variantUx)')}
-                      className={`p-6 rounded-xl border-2 transition-all hover:scale-105 ${colors[idx % 3]} min-h-[200px] flex flex-col justify-between`}
+                      onClick={() => tier.stripePriceId ? handleCheckout(tier.stripePriceId, tier.name, "subscription", 1) : alert('Add Stripe Price ID in variantUx')}
+                      className={`p-6 rounded-xl border-2 transition-all hover:scale-105 ${colors[idx % colors.length]} min-h-[200px] flex flex-col justify-between`}
                     >
                       <div>
                         <div className="text-4xl font-bold text-cyan-400 mb-2">${tier.price}</div>
@@ -541,7 +402,7 @@ export default function ManifestoriumSite() {
                 })}
               </div>
             ) : (
-              <div className="grid md:grid-cols-3 gap-6 mb-8">
+              <div className="grid md:grid-cols-2 gap-6 mb-8">
                 <button
                   onClick={() => setDonationAmount('10')}
                   className="p-6 rounded-xl border-2 border-cyan-500/30 hover:border-cyan-400 hover:bg-cyan-500/10 transition-all hover:scale-105"
@@ -567,6 +428,15 @@ export default function ManifestoriumSite() {
                   <div className="text-3xl mb-2">🚀</div>
                   <div className="text-2xl font-bold text-pink-400">$50</div>
                   <div className="text-sm text-gray-400 mt-2">Tool maintenance</div>
+                </button>
+
+                <button
+                  onClick={() => setDonationAmount('100')}
+                  className="p-6 rounded-xl border-2 border-cyan-500/30 hover:border-cyan-400 hover:bg-cyan-500/10 transition-all hover:scale-105"
+                >
+                  <div className="text-3xl mb-2">🛠️</div>
+                  <div className="text-2xl font-bold text-cyan-400">$100</div>
+                  <div className="text-sm text-gray-400 mt-2">Major upgrade fuel</div>
                 </button>
               </div>
             )}
@@ -732,5 +602,160 @@ export default function ManifestoriumSite() {
         </div>
       </footer>
     </div>
+  );
+}
+
+/**
+ * Shop browsing:
+ * - Search + Category filter
+ * - Whole card clickable to /products/[slug]
+ * - Grid 4-wide on desktop
+ */
+function ShopBrowser({ loading, products, onCheckout }) {
+  const [query, setQuery] = useState("");
+  const [activeCat, setActiveCat] = useState("all");
+
+  const categories = useMemo(() => {
+    const set = new Set();
+    (products || []).forEach((p) => {
+      (p.categories || []).forEach((c) => {
+        if (typeof c === "string" && c.trim()) set.add(c.trim());
+      });
+    });
+    return ["all", ...Array.from(set).sort((a, b) => a.localeCompare(b))];
+  }, [products]);
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return (products || []).filter((p) => {
+      const name = (p.name || "").toLowerCase();
+      const desc = (p.description || "").toLowerCase();
+
+      const matchesQuery = !q || name.includes(q) || desc.includes(q);
+
+      const matchesCat =
+        activeCat === "all" ||
+        (p.categories || []).some((c) => (c || "").toLowerCase() === activeCat.toLowerCase());
+
+      return matchesQuery && matchesCat;
+    });
+  }, [products, query, activeCat]);
+
+  if (loading) {
+    return (
+      <div className="text-center py-20">
+        <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-400"></div>
+        <p className="text-gray-400 mt-4">Loading products...</p>
+      </div>
+    );
+  }
+
+  if (!products || products.length === 0) {
+    return (
+      <div className="text-center py-20 bg-gradient-to-br from-purple-900/20 to-pink-900/20 rounded-2xl border border-purple-500/30">
+        <p className="text-gray-300 text-lg mb-4">No products found in Contentful</p>
+        <p className="text-gray-400">Make sure products are Published in Contentful → Content</p>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <div className="mb-8 grid gap-4">
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search products…"
+          className="w-full px-4 py-3 bg-black/50 border border-cyan-500/30 rounded-lg focus:border-cyan-400 focus:outline-none text-white"
+        />
+
+        <div className="flex flex-wrap gap-2">
+          {categories.map((c) => (
+            <button
+              key={c}
+              onClick={() => setActiveCat(c)}
+              className={`px-3 py-2 rounded-full text-sm border transition ${
+                activeCat === c
+                  ? "border-cyan-400 text-cyan-200 bg-cyan-500/10"
+                  : "border-purple-500/30 text-gray-300 hover:border-purple-400"
+              }`}
+            >
+              {c === "all" ? "All" : c}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {filtered.length === 0 ? (
+        <div className="text-center py-16 bg-gradient-to-br from-gray-900 to-black rounded-2xl border border-purple-500/30">
+          <p className="text-gray-300 text-lg">No matches.</p>
+          <p className="text-gray-400 text-sm mt-2">Try a different category or search term.</p>
+        </div>
+      ) : (
+        <div className="grid md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {filtered.map((product) => {
+            const href = product.slug ? `/products/${product.slug}` : null;
+
+            return (
+              <div
+                key={product.id}
+                role={href ? "link" : undefined}
+                tabIndex={href ? 0 : undefined}
+                onClick={() => { if (href) window.location.href = href; }}
+                onKeyDown={(e) => {
+                  if (!href) return;
+                  if (e.key === "Enter" || e.key === " ") window.location.href = href;
+                }}
+                className={`bg-gradient-to-br from-gray-900 to-black rounded-2xl border border-purple-500/30 hover:border-purple-400 transition-all duration-300 overflow-hidden group hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/30 ${
+                  href ? "cursor-pointer" : ""
+                }`}
+              >
+                <div className="h-48 bg-gradient-to-br from-cyan-500/20 to-purple-500/20 flex items-center justify-center overflow-hidden">
+                  {product.image ? (
+                    <img
+                      src={product.image}
+                      alt={product.name}
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform"
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  ) : (
+                    <div className="text-7xl">🎴</div>
+                  )}
+                </div>
+
+                <div className="p-6">
+                  <h3 className="text-xl font-bold text-white mb-2">{product.name}</h3>
+
+                  {product.description && (
+                    <p className="text-gray-400 text-sm mb-3 line-clamp-2">{product.description}</p>
+                  )}
+
+                  <div className="flex items-center justify-between">
+                    <span className="text-2xl font-bold text-purple-400">${product.price}</span>
+
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onCheckout(product);
+                      }}
+                      className="px-4 py-2 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-lg font-semibold hover:scale-105 transition-transform"
+                    >
+                      Buy Now
+                    </button>
+                  </div>
+
+                  {!product.slug && (
+                    <p className="text-xs text-pink-300 mt-3">
+                      (Missing slug — add it in Contentful to enable product page.)
+                    </p>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </>
   );
 }
