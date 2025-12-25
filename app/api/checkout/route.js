@@ -6,65 +6,62 @@ export const runtime = "nodejs";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
-function getBaseUrl(req) {
-  const proto = req.headers.get("x-forwarded-proto") || "https";
-  const host = req.headers.get("host");
-  return `${proto}://${host}`;
-}
+const ALLOWED_COUNTRIES = [
+  "US",
+  "CA",
+  "DE", // Germany
+  // add more later if you want
+];
 
 export async function POST(req) {
   try {
     const { priceId, quantity = 1, mode = "payment" } = await req.json();
 
-    if (!process.env.STRIPE_SECRET_KEY) {
-      return NextResponse.json({ error: "Missing STRIPE_SECRET_KEY" }, { status: 500 });
-    }
-
     if (!priceId) {
       return NextResponse.json({ error: "Missing priceId" }, { status: 400 });
     }
 
-    const baseUrl = getBaseUrl(req);
+    const shippingUS = process.env.STRIPE_SHIPPING_RATE_US || null;
+    const shippingIntl = process.env.STRIPE_SHIPPING_RATE_INTL || null;
 
-    // Pull shipping rate IDs from env (recommended)
-    const shippingRateStandard = process.env.STRIPE_SHIPPING_RATE_STANDARD || null;
-    const shippingRateExpress = process.env.STRIPE_SHIPPING_RATE_EXPRESS || null;
-
-    // Build shipping options list
+    // Build shipping options list (Stripe will only show options valid for the entered address)
     const shipping_options = [];
-    if (shippingRateStandard) shipping_options.push({ shipping_rate: shippingRateStandard });
-    if (shippingRateExpress) shipping_options.push({ shipping_rate: shippingRateExpress });
+    if (shippingUS) shipping_options.push({ shipping_rate: shippingUS });
+    if (shippingIntl) shipping_options.push({ shipping_rate: shippingIntl });
+
+    // If you want shipping required for physical products, keep this ON:
+    const needsShipping = true;
 
     const session = await stripe.checkout.sessions.create({
-      mode, // "payment" for products, "subscription" for donation tiers if you use that
+      mode,
       line_items: [
         {
           price: priceId,
-          quantity: Math.max(1, Number(quantity) || 1),
+          quantity: Number(quantity || 1),
         },
       ],
+      success_url: `${process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"}/?success=1`,
+      cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"}/?canceled=1`,
 
-      // ✅ This is the big one: collect shipping address
-      shipping_address_collection: {
-        // Add whatever you want here. Germany = "DE"
-        allowed_countries: ["US", "CA", "DE"],
-      },
+      ...(needsShipping
+        ? {
+            shipping_address_collection: { allowed_countries: ALLOWED_COUNTRIES },
+            shipping_options: shipping_options.length ? shipping_options : undefined,
+          }
+        : {}),
 
-      // ✅ Show shipping choices (only works if you pass shipping_options)
-      ...(shipping_options.length ? { shipping_options } : {}),
+      // Optional: lets you view address in Stripe dashboard
+      billing_address_collection: "auto",
 
-      // Optional but useful: capture phone for delivery issues
-      phone_number_collection: { enabled: true },
-
-      // Where Stripe sends them back
-      success_url: `${baseUrl}/?success=1`,
-      cancel_url: `${baseUrl}/?canceled=1`,
+      // Optional: collect phone
+      // phone_number_collection: { enabled: true },
     });
 
     return NextResponse.json({ url: session.url });
   } catch (err) {
-    const msg = err?.message || String(err);
-    console.error("Checkout error:", msg);
-    return NextResponse.json({ error: msg }, { status: 500 });
+    return NextResponse.json(
+      { error: err?.message || "Checkout error" },
+      { status: 500 }
+    );
   }
 }
