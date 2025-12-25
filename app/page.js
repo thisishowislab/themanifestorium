@@ -1,206 +1,100 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { ShoppingCart, Menu, X, Zap, Cpu, Sparkles, ChevronRight, Instagram, Mail, Home, Briefcase, Store, MapPin, Heart, MessageCircle } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
+import Image from 'next/image';
+import {
+  Menu, X, Zap, Cpu, Sparkles, ChevronRight,
+  Instagram, Mail, Home, Briefcase, Store, MapPin, Heart, MessageCircle, Users
+} from 'lucide-react';
 
 export default function ManifestoriumSite() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState('home');
   const [scrollY, setScrollY] = useState(0);
-  const [donationAmount, setDonationAmount] = useState('');
+
   const [products, setProducts] = useState([]);
   const [portfolioItems, setPortfolioItems] = useState([]);
   const [tours, setTours] = useState([]);
   const [donationTiers, setDonationTiers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [checkoutLoading, setCheckoutLoading] = useState(false);
-  const [formData, setFormData] = useState({ name: '', email: '', message: '' });
-  const [formStatus, setFormStatus] = useState('');
 
-  const CONTENTFUL_SPACE_ID = 'nfc5otagjk9d';
-  const CONTENTFUL_ACCESS_TOKEN = 'pNY83Bj4SI3qeOlhInXguFQBN8cqE1dT0VBr1mpAB7k';
-  const STRIPE_KEY = 'pk_live_51SJAagC2WMzoC8yUOEzNRf6XW4Q37cT5qkpklTSxo9vc3ukunfD7kArwq7NsaEelliZZDiv656iX9Iqgw2RRtMn900IT9qGL8H';
+  const [shopQuery, setShopQuery] = useState('');
+  const [activeCategory, setActiveCategory] = useState('All');
+
+  const [formData, setFormData] = useState({ name: '', email: '', message: '' });
+  const [formStatus] = useState('');
 
   useEffect(() => {
     const handleScroll = () => setScrollY(window.scrollY);
     window.addEventListener('scroll', handleScroll);
-    
-    // Load Stripe script
+
     if (!document.querySelector('script[src="https://js.stripe.com/v3/"]')) {
       const script = document.createElement('script');
       script.src = 'https://js.stripe.com/v3/';
       script.async = true;
-      script.onload = () => console.log('✅ Stripe.js loaded');
-      script.onerror = () => console.error('❌ Failed to load Stripe.js');
       document.head.appendChild(script);
     }
-    
-    fetchContentfulData();
+
+    fetchCatalogData();
+
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const getImageUrl = (asset) => {
-    if (!asset?.fields?.file) return null;
-    const url = asset.fields.file.url;
-    return url.startsWith('//') ? `https:${url}` : url;
-  };
-
-  const fetchContentfulData = async () => {
+  const fetchCatalogData = async () => {
     try {
       setLoading(true);
-      
-      const response = await fetch(
-        `https://cdn.contentful.com/spaces/${CONTENTFUL_SPACE_ID}/environments/master/entries?access_token=${CONTENTFUL_ACCESS_TOKEN}&include=10`
-      );
-      
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-      
-      const data = await response.json();
-      console.log('=== CONTENTFUL DATA ===', data);
-      
-      // Build asset map
-      const assetMap = {};
-      if (data.includes?.Asset) {
-        data.includes.Asset.forEach(asset => {
-          assetMap[asset.sys.id] = asset;
-        });
-      }
-      
-      const prods = [], port = [], trs = [], tiers = [];
-      
-      data.items.forEach(item => {
-        const contentTypeId = item.sys.contentType?.sys?.id;
-        const f = item.fields;
-        
-        // Get image from any possible field
-        const imgField = f.productImage || f.tourImage || f.image;
-        const img = imgField?.sys?.id ? getImageUrl(assetMap[imgField.sys.id]) : null;
-        
-        console.log('Processing:', {
-          contentTypeId,
-          name: f.productName || f.tourName || f.tierName || f.title,
-          fields: Object.keys(f)
-        });
-        
-        // MARKETPLACE PRODUCT - ID: NVpVj8LwkehFy7TfbDiCu
-        if (contentTypeId === 'NVpVj8LwkehFy7TfbDiCu') {
-          const product = {
-            id: item.sys.id,
-            name: f.productName || 'Untitled Product',
-            price: Number(f.price || 0),
-            description: f.productDescription || '',
-            image: img,
-            stripePriceId: f.stripePriceId || null
-          };
-          console.log('✅ PRODUCT FOUND:', product);
-          prods.push(product);
-        } 
-        // TOUR - ID: 70oPrCNwUtqI05YuxYLW9D
-        else if (contentTypeId === '70oPrCNwUtqI05YuxYLW9D') {
-          const tour = {
-            id: item.sys.id,
-            name: f.tourName || f.name || 'Untitled Tour',
-            price: Number(f.price || 25),
-            description: f.tourDescription || f.description || '',
-            image: img,
-            stripePriceId: f.stripePriceId || null
-          };
-          console.log('✅ TOUR FOUND:', tour);
-          trs.push(tour);
-        } 
-        // DONATION TIER - ID: 5YmWnOsbaqjCb367hRLpST
-        else if (contentTypeId === '5YmWnOsbaqjCb367hRLpST') {
-          const tier = {
-            id: item.sys.id,
-            name: f.tierName || f.name || 'Support',
-            price: Number(f.price || 10),
-            description: f.tierDescription || f.description || '',
-            stripePriceId: f.stripePriceId || null
-          };
-          console.log('✅ DONATION TIER FOUND:', tier);
-          tiers.push(tier);
-        } 
-        // PORTFOLIO - everything else
-        else {
-          if (f.title || f.name || img) {
-            const portfolioItem = {
-              id: item.sys.id,
-              title: f.title || f.name || 'Untitled',
-              desc: f.description || '',
-              tech: f.technologies || f.tech || '',
-              image: img
-            };
-            console.log('✅ PORTFOLIO FOUND:', portfolioItem);
-            port.push(portfolioItem);
-          }
-        }
-      });
-      
-      console.log('=== FINAL RESULTS ===');
-      console.log('Products:', prods.length, prods);
-      console.log('Tours:', trs.length, trs);
-      console.log('Donation Tiers:', tiers.length, tiers);
-      console.log('Portfolio:', port.length, port);
-      
-      setProducts(prods);
-      setTours(trs);
-      setDonationTiers(tiers);
-      setPortfolioItems(port);
-      setLoading(false);
-    } catch (error) {
-      console.error('❌ Contentful Error:', error);
+      const res = await fetch('/api/catalog', { method: 'GET' });
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data?.error || 'Failed to load catalog');
+
+      setProducts(Array.isArray(data.products) ? data.products : []);
+      setTours(Array.isArray(data.tours) ? data.tours : []);
+      setDonationTiers(Array.isArray(data.donationTiers) ? data.donationTiers : []);
+      setPortfolioItems(Array.isArray(data.portfolioItems) ? data.portfolioItems : []);
+    } catch (e) {
+      console.error('Catalog load error:', e);
+      setProducts([]);
+      setTours([]);
+      setDonationTiers([]);
+      setPortfolioItems([]);
+    } finally {
       setLoading(false);
     }
   };
 
-  const handleCheckout = async (priceId, itemName, itemPrice) => {
-    console.log('🛒 CHECKOUT STARTED');
-    console.log('Price ID:', priceId);
-    console.log('Item:', itemName, '-', itemPrice);
-    
+  const handleCheckout = async (priceId, itemName, mode = "payment", quantity = 1) => {
     if (!priceId) {
-      alert(`Missing Stripe Price ID for "${itemName}".`);
+      alert(`Missing Stripe Price ID for "${itemName}"`);
       return;
     }
-    
-    if (!priceId.startsWith('price_')) {
-      alert(`Invalid Price ID format: ${priceId}\n\nShould start with "price_"`);
-      return;
-    }
-    
-    if (!STRIPE_KEY) {
-      alert('⚠️ Stripe key not configured!\n\nGo to Vercel → Settings → Environment Variables\nAdd: NEXT_PUBLIC_STRIPE_KEY');
-      return;
-    }
-    
-    console.log('Stripe Key loaded:', STRIPE_KEY.substring(0, 15) + '...');
-    
+
     try {
-      if (!window.Stripe) {
-        alert('Stripe not loaded. Please refresh and try again.');
+      const res = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ priceId, mode, quantity }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        const msg = data.error || "Checkout failed";
+        alert(`❌ STRIPE ERROR\n\n${msg}\n\nItem: ${itemName}\nPrice ID: ${priceId}`);
         return;
       }
-      
-      console.log('Initializing Stripe...');
-      const stripe = window.Stripe(STRIPE_KEY);
-      
-      console.log('Redirecting to Stripe Checkout...');
-      console.log('Using Price ID:', priceId);
-      
-      const result = await stripe.redirectToCheckout({
-        lineItems: [{ price: priceId, quantity: 1 }],
-        mode: 'payment',
-        successUrl: `${window.location.origin}?success=true`,
-        cancelUrl: window.location.origin,
-      });
-      
-      if (result.error) {
-        console.error('❌ Stripe Error:', result.error);
-        alert(`Stripe Error: ${result.error.message}`);
+
+      if (!data.url) {
+        alert("Stripe did not return a checkout URL.");
+        return;
       }
+
+      window.location.href = data.url;
     } catch (error) {
-      console.error('❌ Error:', error);
-      alert(`Error: ${error.message}`);
+      const msg = error?.message || String(error);
+      alert(`❌ NETWORK / SERVER ERROR\n\n${msg}`);
+      console.error("Checkout exception:", error);
     }
   };
 
@@ -215,12 +109,37 @@ export default function ManifestoriumSite() {
   const Nav = ({ section, icon: Icon, children }) => (
     <button
       onClick={() => { setActiveSection(section); setMenuOpen(false); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-      className={`flex flex-col items-center gap-1 px-4 py-2 transition ${activeSection === section ? 'text-cyan-400' : 'text-gray-300 hover:text-white'}`}
+      className={`flex flex-col items-center gap-1 px-4 py-2 transition ${
+        activeSection === section ? 'text-cyan-400' : 'text-gray-300 hover:text-white'
+      }`}
     >
       <Icon size={24} />
       <span className="text-xs">{children}</span>
     </button>
   );
+
+  // ---- Shop category + search helpers ----
+  const allCategories = useMemo(() => {
+    const set = new Set();
+    for (const p of products) (p.categories || []).forEach(c => set.add(c));
+    const arr = Array.from(set).sort((a, b) => a.localeCompare(b));
+    return ['All', ...arr];
+  }, [products]);
+
+  const filteredProducts = useMemo(() => {
+    const q = shopQuery.trim().toLowerCase();
+    return (products || []).filter((p) => {
+      const inCat = activeCategory === 'All' ? true : (p.categories || []).includes(activeCategory);
+      const inQuery = !q
+        ? true
+        : (p.name || '').toLowerCase().includes(q) ||
+          (p.description || '').toLowerCase().includes(q) ||
+          (p.categories || []).some(c => c.toLowerCase().includes(q));
+      return inCat && inQuery;
+    });
+  }, [products, shopQuery, activeCategory]);
+
+  const communityBadgeSrc = '/community-badge.png'; // <- drop your badge/logo into /public with this name
 
   return (
     <div className="bg-black text-white min-h-screen">
@@ -233,18 +152,22 @@ export default function ManifestoriumSite() {
               THE MANIFESTORIUM
             </h1>
           </button>
+
           <div className="hidden md:flex gap-2">
             <Nav section="home" icon={Home}>Home</Nav>
             <Nav section="portfolio" icon={Briefcase}>Portfolio</Nav>
             <Nav section="shop" icon={Store}>Shop</Nav>
             <Nav section="tours" icon={MapPin}>Tours</Nav>
             <Nav section="support" icon={Heart}>Support</Nav>
+            <Nav section="community" icon={Users}>Community</Nav>
             <Nav section="contact" icon={MessageCircle}>Contact</Nav>
           </div>
+
           <button className="md:hidden text-cyan-400" onClick={() => setMenuOpen(!menuOpen)}>
             {menuOpen ? <X size={28} /> : <Menu size={28} />}
           </button>
         </div>
+
         {menuOpen && (
           <div className="md:hidden bg-black/95 backdrop-blur-lg border-t border-cyan-500/30 p-6 flex flex-col gap-2">
             <Nav section="home" icon={Home}>Home</Nav>
@@ -252,12 +175,13 @@ export default function ManifestoriumSite() {
             <Nav section="shop" icon={Store}>Shop</Nav>
             <Nav section="tours" icon={MapPin}>Tours</Nav>
             <Nav section="support" icon={Heart}>Support</Nav>
+            <Nav section="community" icon={Users}>Community</Nav>
             <Nav section="contact" icon={MessageCircle}>Contact</Nav>
           </div>
         )}
       </nav>
 
-      {/* HOME SECTION */}
+      {/* HOME */}
       {activeSection === 'home' && (
         <section className="min-h-screen flex items-center justify-center relative pt-20">
           <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 via-purple-500/10 to-pink-500/10" />
@@ -271,6 +195,7 @@ export default function ManifestoriumSite() {
               <Zap className="text-purple-400 animate-pulse" size={48} />
               <Sparkles className="text-pink-400 animate-pulse" size={48} />
             </div>
+
             <h2 className="text-5xl md:text-7xl font-black mb-6 leading-tight">
               <span className="bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
                 Your Imagination
@@ -278,28 +203,45 @@ export default function ManifestoriumSite() {
               <br />
               <span>Fabrication Station</span>
             </h2>
-            <p className="text-xl md:text-2xl text-gray-300 mb-8 max-w-3xl mx-auto leading-relaxed">
-              Where off-grid tech, desert salvage, and handmade myth collide to prove that 
+
+            <p className="text-xl md:text-2xl text-gray-300 mb-6 max-w-3xl mx-auto leading-relaxed">
+              Where off-grid tech, desert salvage, and handmade myth collide to prove that
               <span className="text-cyan-400 font-bold"> creation doesn't belong to the rich</span>, the plugged-in, or the polished.
             </p>
-            <div className="flex flex-wrap gap-4 justify-center">
-              <button 
+
+            {/* Manifestorium + FMUO microcopy */}
+            <div className="mx-auto max-w-3xl mt-6 text-left">
+              <div className="p-6 bg-black/40 rounded-2xl border border-cyan-500/25">
+                <p className="text-gray-200 leading-relaxed">
+                  <span className="text-cyan-400 font-bold">The Manifestorium</span> is an off-grid art and fabrication studio operating at the intersection of salvaged materials, experimental technology, and desert mythology.
+                  Everything here is made by hand—often from reclaimed parts—and designed to exist somewhere between functional object and quiet artifact.
+                </p>
+                <p className="text-gray-300 leading-relaxed mt-4">
+                  <span className="text-purple-300 font-semibold">For Magical Use Only</span> means these objects are not optimized, mass-produced, or pretending to be perfect.
+                  They are experiments. They are companions. They are proof that meaning can be fabricated from almost nothing.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-4 justify-center mt-8">
+              <button
                 onClick={() => setActiveSection('portfolio')}
                 className="px-8 py-4 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-lg font-bold text-lg hover:scale-105 transition-transform shadow-lg shadow-cyan-500/50"
               >
                 Explore Portfolio <ChevronRight className="inline ml-2" />
               </button>
-              <button 
+              <button
                 onClick={() => setActiveSection('shop')}
                 className="px-8 py-4 border-2 border-cyan-400 rounded-lg font-bold text-lg hover:bg-cyan-400/20 transition-all"
               >
                 Shop Art Tech
               </button>
             </div>
-            <div className="mt-16 p-8 bg-gradient-to-r from-purple-900/30 to-cyan-900/30 rounded-2xl border border-cyan-500/30 backdrop-blur-sm">
+
+            <div className="mt-12 p-8 bg-gradient-to-r from-purple-900/30 to-cyan-900/30 rounded-2xl border border-cyan-500/30 backdrop-blur-sm">
               <p className="text-lg leading-relaxed">
-                <span className="text-cyan-400 font-bold">Everything is an experiment.</span> 
-                {' '}You're invited to participate, not spectate. Improvisation is law, tech is a paintbrush, 
+                <span className="text-cyan-400 font-bold">Everything is an experiment.</span>
+                {' '}You're invited to participate, not spectate. Improvisation is law, tech is a paintbrush,
                 and your weirdest ideas are suddenly fair game.
               </p>
             </div>
@@ -307,15 +249,22 @@ export default function ManifestoriumSite() {
         </section>
       )}
 
-      {/* PORTFOLIO SECTION */}
+      {/* PORTFOLIO */}
       {activeSection === 'portfolio' && (
         <section className="min-h-screen pt-32 pb-20 px-6">
           <div className="max-w-7xl mx-auto">
             <h2 className="text-5xl font-black mb-4 bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
               Portfolio
             </h2>
-            <p className="text-xl text-gray-400 mb-12">Art at the intersection of code, craft, and chaos</p>
-            
+
+            <div className="mb-10 p-6 bg-gradient-to-br from-cyan-900/20 to-purple-900/20 rounded-2xl border border-cyan-500/30">
+              <p className="text-gray-300 leading-relaxed">
+                The portfolio is not a highlight reel. It’s a record of experiments, failed ideas that learned something,
+                and objects that found a reason to exist along the way. Some were commissioned. Some were accidents.
+                Some were built to solve a problem that no longer exists. All of them taught us something worth keeping.
+              </p>
+            </div>
+
             {loading ? (
               <div className="text-center py-20">
                 <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-400"></div>
@@ -324,12 +273,12 @@ export default function ManifestoriumSite() {
             ) : portfolioItems.length === 0 ? (
               <div className="text-center py-20 bg-gradient-to-br from-cyan-900/20 to-purple-900/20 rounded-2xl border border-cyan-500/30">
                 <p className="text-gray-300 text-lg mb-4">Portfolio items coming soon!</p>
-                <p className="text-gray-400">Add content in your Contentful space to showcase your work here.</p>
+                <p className="text-gray-400">Add content in Contentful → Content and it will appear here.</p>
               </div>
             ) : (
               <div className="grid md:grid-cols-2 gap-8">
                 {portfolioItems.map((item) => (
-                  <div 
+                  <div
                     key={item.id}
                     className="group relative bg-gradient-to-br from-gray-900 to-black p-8 rounded-2xl border border-cyan-500/30 hover:border-cyan-400 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-cyan-500/30 overflow-hidden"
                   >
@@ -359,83 +308,202 @@ export default function ManifestoriumSite() {
         </section>
       )}
 
-      {/* SHOP SECTION */}
+      {/* SHOP */}
       {activeSection === 'shop' && (
         <section className="min-h-screen pt-32 pb-20 px-6">
           <div className="max-w-7xl mx-auto">
             <h2 className="text-5xl font-black mb-4 bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
               Shop
             </h2>
-            <p className="text-xl text-gray-400 mb-12">Own a piece of the weird and wonderful</p>
-            
+
+            {/* Shop framing copy */}
+            <div className="mb-8 p-6 bg-gradient-to-br from-purple-900/20 to-pink-900/20 rounded-2xl border border-purple-500/30">
+              <p className="text-gray-300 leading-relaxed">
+                Objects here are grouped by temperament, not by product line. Browse by category, follow what pulls at you,
+                and don’t worry about choosing correctly. Most items exist in limited runs, small batches, or single incarnations.
+              </p>
+              <p className="text-gray-400 mt-3 text-sm">
+                Tip: Tap a card to open the full product page. Variants, photos, care notes, and checkout live there.
+              </p>
+            </div>
+
+            {/* Category chips + search */}
+            <div className="mb-8 flex flex-col gap-4">
+              <div className="flex gap-2 overflow-x-auto pb-2">
+                {allCategories.map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => setActiveCategory(cat)}
+                    className={`px-4 py-2 rounded-full border text-sm whitespace-nowrap transition ${
+                      activeCategory === cat
+                        ? 'border-cyan-400 text-cyan-200 bg-cyan-500/10'
+                        : 'border-cyan-500/20 text-gray-300 hover:border-cyan-400'
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex gap-3">
+                <input
+                  value={shopQuery}
+                  onChange={(e) => setShopQuery(e.target.value)}
+                  placeholder="Search products, categories…"
+                  className="w-full px-4 py-3 bg-black/50 border border-cyan-500/30 rounded-lg focus:border-cyan-400 focus:outline-none text-white"
+                />
+                <button
+                  onClick={() => { setShopQuery(''); setActiveCategory('All'); }}
+                  className="px-4 py-3 border border-cyan-500/30 rounded-lg hover:border-cyan-400 text-gray-200"
+                >
+                  Clear
+                </button>
+              </div>
+            </div>
+
             {loading ? (
               <div className="text-center py-20">
                 <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-400"></div>
                 <p className="text-gray-400 mt-4">Loading products...</p>
               </div>
-            ) : products.length === 0 ? (
+            ) : filteredProducts.length === 0 ? (
               <div className="text-center py-20 bg-gradient-to-br from-purple-900/20 to-pink-900/20 rounded-2xl border border-purple-500/30">
-                <p className="text-gray-300 text-lg mb-4">No products found in Contentful</p>
-                <p className="text-gray-400 mb-6">Make sure your products are Published in Contentful → Content</p>
-                <button 
-                  onClick={() => setActiveSection('contact')}
-                  className="px-6 py-3 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-lg font-bold hover:scale-105 transition-transform"
-                >
-                  Contact Us About Custom Orders
-                </button>
+                <p className="text-gray-300 text-lg mb-4">No matches found</p>
+                <p className="text-gray-400">Try another category or a different search term.</p>
               </div>
             ) : (
-              <div className="grid md:grid-cols-3 gap-6">
-                {products.map((product) => (
-                  <div 
-                    key={product.id}
-                    className="bg-gradient-to-br from-gray-900 to-black rounded-2xl border border-purple-500/30 hover:border-purple-400 transition-all duration-300 overflow-hidden group hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/30"
-                  >
-                    <div className="h-48 bg-gradient-to-br from-cyan-500/20 to-purple-500/20 flex items-center justify-center overflow-hidden">
-                      {product.image ? (
-                        <img 
-                          src={product.image} 
-                          alt={product.name} 
-                          className="w-full h-full object-cover group-hover:scale-110 transition-transform"
+              // ✅ Mobile 2-up, Desktop 4-up
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+                {filteredProducts.map((product) => {
+                  const hasSlug = Boolean(product.slug);
+                  const href = hasSlug ? `/product/${product.slug}` : null;
+
+                  return (
+                    <div
+                      key={product.id}
+                      className="relative bg-gradient-to-br from-gray-900 to-black rounded-2xl border border-purple-500/30 hover:border-purple-400 transition-all duration-300 overflow-hidden group hover:scale-[1.02] hover:shadow-2xl hover:shadow-purple-500/30"
+                    >
+                      {/* Whole-card clickable overlay */}
+                      {href && (
+                        <Link
+                          href={href}
+                          className="absolute inset-0 z-10"
+                          aria-label={`Open ${product.name}`}
                         />
-                      ) : (
-                        <div className="text-7xl">🎴</div>
                       )}
-                    </div>
-                    <div className="p-6">
-                      <h3 className="text-xl font-bold text-white mb-2">{product.name}</h3>
-                      {product.description && (
-                        <p className="text-gray-400 text-sm mb-3 line-clamp-2">{product.description}</p>
-                      )}
-                      <div className="flex items-center justify-between">
-                        <span className="text-2xl font-bold text-purple-400">${product.price}</span>
-                        <button 
-                          onClick={() => handleCheckout(product.stripePriceId, product.name, product.price)}
-                          className="px-4 py-2 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-lg font-semibold hover:scale-105 transition-transform"
-                        >
-                          Buy Now
-                        </button>
+
+                      {/* Image */}
+                      <div className="h-40 md:h-48 bg-gradient-to-br from-cyan-500/20 to-purple-500/20 flex items-center justify-center overflow-hidden">
+                        {product.image ? (
+                          <img
+                            src={product.image}
+                            alt={product.name}
+                            className="w-full h-full object-cover group-hover:scale-110 transition-transform"
+                            loading="lazy"
+                          />
+                        ) : (
+                          <div className="text-5xl md:text-7xl">🎴</div>
+                        )}
+                      </div>
+
+                      <div className="p-4 md:p-6 relative z-20">
+                        <div className="flex items-start justify-between gap-2">
+                          <h3 className="text-base md:text-xl font-bold text-white leading-snug">
+                            {product.name}
+                          </h3>
+
+                          {/* Community badge (auto uses image if you add /public/community-badge.png) */}
+                          {product.communityEligible && (
+                            <div className="flex items-center gap-2 flex-shrink-0">
+                              <div className="h-6 w-6 relative">
+                                {/* If you add the badge file, this shows. If not, it will silently fail and still show text badge. */}
+                                <Image
+                                  src={communityBadgeSrc}
+                                  alt="Community option"
+                                  fill
+                                  className="object-contain"
+                                  onError={() => {}}
+                                />
+                              </div>
+                              <span className="text-[10px] md:text-xs px-2 py-1 rounded-full border border-cyan-400/40 text-cyan-200 bg-cyan-500/10">
+                                Community
+                              </span>
+                            </div>
+                          )}
+                        </div>
+
+                        {product.description && (
+                          <p className="text-gray-400 text-xs md:text-sm mt-2 line-clamp-2">
+                            {product.description}
+                          </p>
+                        )}
+
+                        {/* Categories */}
+                        {Array.isArray(product.categories) && product.categories.length > 0 && (
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {product.categories.slice(0, 2).map((c) => (
+                              <span key={c} className="text-[10px] md:text-xs px-2 py-1 rounded-full bg-purple-500/15 text-purple-200 border border-purple-500/20">
+                                {c}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+
+                        <div className="flex items-center justify-between mt-4">
+                          <span className="text-lg md:text-2xl font-bold text-purple-400">
+                            ${Number(product.price || 0)}
+                          </span>
+
+                          {/* Buy button should still work even though whole card is clickable */}
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleCheckout(product.stripePriceId, product.name, "payment", 1);
+                            }}
+                            className="px-3 md:px-4 py-2 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-lg font-semibold hover:scale-105 transition-transform"
+                          >
+                            Buy
+                          </button>
+                        </div>
+
+                        {/* Community link CTA */}
+                        {product.communityEligible && (
+                          <Link
+                            href={`/community?item=${encodeURIComponent(product.slug || product.name)}`}
+                            onClick={(e) => e.stopPropagation()}
+                            className="mt-3 inline-block text-xs text-cyan-200 hover:text-cyan-300 underline underline-offset-4"
+                          >
+                            Ask about Community Options
+                          </Link>
+                        )}
+
+                        {!product.stripePriceId && (
+                          <p className="text-xs text-pink-300 mt-3">
+                            (Missing Stripe Price ID in variantUx)
+                          </p>
+                        )}
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
         </section>
       )}
 
-      {/* TOURS SECTION */}
+      {/* TOURS */}
       {activeSection === 'tours' && (
         <section className="min-h-screen pt-32 pb-20 px-6">
           <div className="max-w-6xl mx-auto">
             <h2 className="text-5xl font-black mb-4 bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
               Local Tours
             </h2>
-            <p className="text-xl text-gray-400 mb-12">
-              Experience creation in action - just 100 feet from Salvation Mountain
+            <p className="text-xl text-gray-400 mb-10">
+              Experience creation in action — just 100 feet from Salvation Mountain.
             </p>
-            
+
             {loading ? (
               <div className="text-center py-20">
                 <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-400"></div>
@@ -445,10 +513,10 @@ export default function ManifestoriumSite() {
               <div className="bg-gradient-to-br from-cyan-900/30 to-purple-900/30 p-8 rounded-2xl border border-cyan-500/30">
                 <h3 className="text-3xl font-bold text-cyan-400 mb-4">Desert Creation Station Tours</h3>
                 <p className="text-gray-300 mb-6 leading-relaxed">
-                  Step into our art tech makerspace where salvaged desert materials meet cutting-edge fabrication. 
-                  See 3D printers, laser cutters, and CNC machines bringing wild ideas to life in real-time.
+                  Step into our art tech makerspace where salvaged desert materials meet fabrication. See printers, lasers,
+                  prototypes, and experiments in real-time.
                 </p>
-                <button 
+                <button
                   onClick={() => setActiveSection('contact')}
                   className="px-8 py-4 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-lg font-bold text-lg hover:scale-105 transition-transform shadow-lg shadow-cyan-500/50"
                 >
@@ -458,16 +526,17 @@ export default function ManifestoriumSite() {
             ) : (
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {tours.map((tour) => (
-                  <div 
+                  <div
                     key={tour.id}
                     className="bg-gradient-to-br from-cyan-900/30 to-purple-900/30 rounded-2xl border border-cyan-500/30 hover:border-cyan-400 transition-all duration-300 overflow-hidden group hover:scale-105 hover:shadow-2xl hover:shadow-cyan-500/30"
                   >
                     {tour.image ? (
                       <div className="h-48 overflow-hidden">
-                        <img 
-                          src={tour.image} 
-                          alt={tour.name} 
+                        <img
+                          src={tour.image}
+                          alt={tour.name}
                           className="w-full h-full object-cover group-hover:scale-110 transition-transform"
+                          loading="lazy"
                         />
                       </div>
                     ) : (
@@ -477,14 +546,14 @@ export default function ManifestoriumSite() {
                     )}
                     <div className="p-6">
                       <h3 className="text-2xl font-bold text-cyan-400 mb-3">{tour.name}</h3>
-                      <p className="text-gray-300 mb-4 leading-relaxed">{tour.description}</p>
+                      <p className="text-gray-300 mb-4 leading-relaxed line-clamp-3">{tour.description}</p>
                       <div className="flex items-center justify-between">
-                        <span className="text-3xl font-bold text-purple-400">${tour.price}</span>
-                        <button 
-                          onClick={() => tour.stripePriceId ? handleCheckout(tour.stripePriceId, tour.name, tour.price) : setActiveSection('contact')}
+                        <span className="text-3xl font-bold text-purple-400">${Number(tour.price || 0)}</span>
+                        <button
+                          onClick={() => tour.stripePriceId ? handleCheckout(tour.stripePriceId, tour.name, "payment", 1) : setActiveSection('contact')}
                           className="px-6 py-2 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-lg font-semibold hover:scale-105 transition-transform"
                         >
-                          Book Now
+                          Book
                         </button>
                       </div>
                     </div>
@@ -496,24 +565,20 @@ export default function ManifestoriumSite() {
         </section>
       )}
 
-      {/* SUPPORT SECTION */}
+      {/* SUPPORT */}
       {activeSection === 'support' && (
         <section className="min-h-screen pt-32 pb-20 px-6">
           <div className="max-w-4xl mx-auto">
             <h2 className="text-5xl font-black mb-4 bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
               Support The Magic
             </h2>
-            <p className="text-xl text-gray-400 mb-12">Keep the creative chaos alive</p>
+            <p className="text-xl text-gray-400 mb-10">Keep the creative chaos alive</p>
 
-            <div className="mb-12 p-8 bg-gradient-to-br from-purple-900/30 to-cyan-900/30 rounded-2xl border border-cyan-500/30">
+            <div className="mb-10 p-8 bg-gradient-to-br from-purple-900/30 to-cyan-900/30 rounded-2xl border border-cyan-500/30">
               <h3 className="text-2xl font-bold text-cyan-400 mb-4">Why Support Us?</h3>
-              <p className="text-gray-300 leading-relaxed mb-4">
-                Every 3D print, every laser cut, every experimental installation runs on materials, electricity, 
-                and the sheer will to keep making weird things in the desert.
-              </p>
               <p className="text-gray-300 leading-relaxed">
-                Your support keeps the machines humming and the ideas flowing. Think of it as funding 
-                the most interesting rest stop on your way through the desert.
+                Every print, prototype, and experiment runs on materials, electricity, and stubborn imagination.
+                Your support keeps the machines humming and the ideas flowing.
               </p>
             </div>
 
@@ -523,130 +588,103 @@ export default function ManifestoriumSite() {
                 <p className="text-gray-400 mt-4">Loading donation options...</p>
               </div>
             ) : donationTiers.length > 0 ? (
-              <div className="grid md:grid-cols-3 gap-6 mb-8">
-                {donationTiers.map((tier, idx) => {
-                  const colors = [
-                    'border-cyan-400 hover:bg-cyan-500/10',
-                    'border-purple-400 hover:bg-purple-500/10',
-                    'border-pink-400 hover:bg-pink-500/10'
-                  ];
-                  
-                  return (
-                    <button
-                      key={tier.id}
-                      onClick={() => tier.stripePriceId ? handleCheckout(tier.stripePriceId, tier.name, tier.price) : alert('Add Stripe Price ID in Contentful')}
-                      className={`p-6 rounded-xl border-2 transition-all hover:scale-105 ${colors[idx % 3]} min-h-[200px] flex flex-col justify-between`}
-                    >
-                      <div>
-                        <div className="text-4xl font-bold text-cyan-400 mb-2">${tier.price}</div>
-                        <div className="text-base font-semibold text-white mt-2 mb-3">{tier.name}</div>
-                        {tier.description && (
-                          <div className="text-xs text-gray-400 leading-relaxed">{tier.description}</div>
-                        )}
-                      </div>
-                    </button>
-                  );
-                })}
+              // ✅ Desktop 2x2 layout (md:grid-cols-2)
+              <div className="grid md:grid-cols-2 gap-6 mb-8">
+                {donationTiers.map((tier) => (
+                  <button
+                    key={tier.id}
+                    onClick={() => tier.stripePriceId ? handleCheckout(tier.stripePriceId, tier.name, "subscription", 1) : alert('Add Stripe Price ID in variantUx')}
+                    className="p-6 rounded-xl border-2 border-cyan-500/30 hover:border-cyan-400 hover:bg-cyan-500/10 transition-all hover:scale-[1.02] min-h-[180px] flex flex-col justify-between text-left"
+                  >
+                    <div>
+                      <div className="text-4xl font-bold text-cyan-400 mb-2">${Number(tier.price || 0)}</div>
+                      <div className="text-lg font-semibold text-white mt-2 mb-3">{tier.name}</div>
+                      {tier.description && (
+                        <div className="text-sm text-gray-300 leading-relaxed">{tier.description}</div>
+                      )}
+                    </div>
+                  </button>
+                ))}
               </div>
             ) : (
-              <div className="grid md:grid-cols-3 gap-6 mb-8">
-                <button
-                  onClick={() => setDonationAmount('10')}
-                  className="p-6 rounded-xl border-2 border-cyan-500/30 hover:border-cyan-400 hover:bg-cyan-500/10 transition-all hover:scale-105"
-                >
-                  <div className="text-3xl mb-2">☕</div>
-                  <div className="text-2xl font-bold text-cyan-400">$10</div>
-                  <div className="text-sm text-gray-400 mt-2">Coffee for the makers</div>
-                </button>
-
-                <button
-                  onClick={() => setDonationAmount('25')}
-                  className="p-6 rounded-xl border-2 border-purple-500/30 hover:border-purple-400 hover:bg-purple-500/10 transition-all hover:scale-105"
-                >
-                  <div className="text-3xl mb-2">⚡</div>
-                  <div className="text-2xl font-bold text-purple-400">$25</div>
-                  <div className="text-sm text-gray-400 mt-2">Materials fund</div>
-                </button>
-
-                <button
-                  onClick={() => setDonationAmount('50')}
-                  className="p-6 rounded-xl border-2 border-pink-500/30 hover:border-pink-400 hover:bg-pink-500/10 transition-all hover:scale-105"
-                >
-                  <div className="text-3xl mb-2">🚀</div>
-                  <div className="text-2xl font-bold text-pink-400">$50</div>
-                  <div className="text-sm text-gray-400 mt-2">Tool maintenance</div>
-                </button>
-              </div>
+              <div className="text-gray-400">No donation tiers yet.</div>
             )}
 
             <div className="p-6 bg-black/50 rounded-xl border border-cyan-500/30 mb-6">
-              <label className="block text-sm font-semibold text-cyan-400 mb-3">Custom Amount</label>
-              <div className="flex gap-4">
-                <div className="relative flex-1">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xl">$</span>
-                  <input
-                    type="number"
-                    value={donationAmount}
-                    onChange={(e) => setDonationAmount(e.target.value)}
-                    placeholder="Enter amount"
-                    className="w-full pl-10 pr-4 py-3 bg-black/50 border border-cyan-500/30 rounded-lg focus:border-cyan-400 focus:outline-none text-white text-lg"
-                  />
-                </div>
-                <button 
-                  onClick={() => alert('Custom donations coming soon! Please contact us or choose a preset tier.')}
-                  className="px-8 py-3 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-lg font-bold hover:scale-105 transition-transform shadow-lg shadow-cyan-500/50 whitespace-nowrap"
+              <p className="text-gray-300">
+                Prefer an exchange instead of cash? Visit <span className="text-cyan-300 font-semibold">Community Supported Creations</span>.
+              </p>
+              <div className="mt-4">
+                <Link
+                  href="/community"
+                  className="inline-block px-6 py-3 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-lg font-bold hover:scale-105 transition-transform shadow-lg shadow-cyan-500/30"
                 >
-                  Contribute
-                </button>
-              </div>
-            </div>
-
-            <div className="grid md:grid-cols-2 gap-6">
-              <div className="p-6 bg-gradient-to-br from-cyan-900/20 to-purple-900/20 rounded-xl border border-cyan-500/30">
-                <h4 className="text-lg font-bold text-cyan-400 mb-3">What Your Support Funds</h4>
-                <ul className="space-y-2 text-gray-300 text-sm">
-                  <li>• 3D printer filament & maintenance</li>
-                  <li>• Laser cutter supplies</li>
-                  <li>• Salvaged material processing</li>
-                  <li>• Off-grid power systems</li>
-                  <li>• Workshop tools & safety equipment</li>
-                  <li>• Community art programs</li>
-                </ul>
-              </div>
-
-              <div className="p-6 bg-gradient-to-br from-purple-900/20 to-pink-900/20 rounded-xl border border-purple-500/30">
-                <h4 className="text-lg font-bold text-purple-400 mb-3">Other Ways to Support</h4>
-                <ul className="space-y-2 text-gray-300 text-sm">
-                  <li>• Buy art from our shop</li>
-                  <li>• Book a local tour</li>
-                  <li>• Share our work on social media</li>
-                  <li>• Donate materials or equipment</li>
-                  <li>• Volunteer your skills</li>
-                  <li>• Commission custom pieces</li>
-                </ul>
+                  Community Options
+                </Link>
               </div>
             </div>
           </div>
         </section>
       )}
 
-      {/* CONTACT SECTION */}
+      {/* COMMUNITY (section that links to the page) */}
+      {activeSection === 'community' && (
+        <section className="min-h-screen pt-32 pb-20 px-6">
+          <div className="max-w-4xl mx-auto">
+            <h2 className="text-5xl font-black mb-6 bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
+              Community Supported Creations
+            </h2>
+
+            <div className="p-8 bg-gradient-to-br from-cyan-900/20 to-purple-900/20 rounded-2xl border border-cyan-500/30">
+              <p className="text-gray-300 leading-relaxed">
+                Not everything here is meant to be bought with cash.
+                Community Supported Creations exists for people who want to participate but can’t—or don’t want to—engage purely through money.
+              </p>
+              <p className="text-gray-300 leading-relaxed mt-4">
+                This can include skill exchange, material trade, collaborative work, or partial payment combined with contribution.
+                The goal isn’t “free stuff.” The goal is keeping creation accessible, relational, and human.
+              </p>
+
+              <div className="mt-8 flex flex-col sm:flex-row gap-4">
+                <Link
+                  href="/community"
+                  className="px-8 py-4 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-lg font-bold text-lg hover:scale-105 transition-transform shadow-lg shadow-cyan-500/30 text-center"
+                >
+                  Start a Conversation
+                </Link>
+                <button
+                  onClick={() => setActiveSection('contact')}
+                  className="px-8 py-4 border-2 border-cyan-400 rounded-lg font-bold text-lg hover:bg-cyan-400/20 transition-all"
+                >
+                  Contact
+                </button>
+              </div>
+
+              <p className="text-gray-400 text-sm mt-6">
+                Respect, clarity, and good faith are required on all sides. Not every request will be a fit—and that’s okay.
+              </p>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* CONTACT */}
       {activeSection === 'contact' && (
         <section className="min-h-screen pt-32 pb-20 px-6">
           <div className="max-w-4xl mx-auto">
             <h2 className="text-5xl font-black mb-8 bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
               Get In Touch
             </h2>
-            
+
             <div className="grid md:grid-cols-2 gap-8">
               <div className="space-y-6">
                 <div className="p-8 bg-gradient-to-br from-cyan-900/20 to-purple-900/20 rounded-2xl border border-cyan-500/30">
                   <h3 className="text-2xl font-bold text-cyan-400 mb-4">Let's Create Together</h3>
                   <p className="text-gray-300 mb-6">
-                    Have a wild idea? Need custom tech art? Want to collaborate or book a tour? 
-                    We're here for it all.
+                    Have a wild idea? Need custom tech art? Want to collaborate or book a tour?
+                    We’re here for it.
                   </p>
-                  
+
                   <div className="space-y-4">
                     <a href="mailto:thisishowislab@gmail.com" className="flex items-center gap-3 text-purple-300 hover:text-purple-400 transition-colors">
                       <Mail size={24} />
@@ -673,10 +711,10 @@ export default function ManifestoriumSite() {
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div>
                     <label className="block text-sm font-semibold text-cyan-400 mb-2">Name</label>
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       value={formData.name}
-                      onChange={(e) => setFormData({...formData, name: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                       required
                       className="w-full px-4 py-3 bg-black/50 border border-cyan-500/30 rounded-lg focus:border-cyan-400 focus:outline-none text-white"
                       placeholder="Your name"
@@ -684,10 +722,10 @@ export default function ManifestoriumSite() {
                   </div>
                   <div>
                     <label className="block text-sm font-semibold text-cyan-400 mb-2">Email</label>
-                    <input 
-                      type="email" 
+                    <input
+                      type="email"
                       value={formData.email}
-                      onChange={(e) => setFormData({...formData, email: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                       required
                       className="w-full px-4 py-3 bg-black/50 border border-cyan-500/30 rounded-lg focus:border-cyan-400 focus:outline-none text-white"
                       placeholder="your@email.com"
@@ -695,25 +733,22 @@ export default function ManifestoriumSite() {
                   </div>
                   <div>
                     <label className="block text-sm font-semibold text-cyan-400 mb-2">Message</label>
-                    <textarea 
+                    <textarea
                       rows={5}
                       value={formData.message}
-                      onChange={(e) => setFormData({...formData, message: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                       required
                       className="w-full px-4 py-3 bg-black/50 border border-cyan-500/30 rounded-lg focus:border-cyan-400 focus:outline-none text-white resize-none"
                       placeholder="Tell us about your idea..."
                     />
                   </div>
-                  <button 
+                  <button
                     type="submit"
                     disabled={formStatus === 'sending'}
                     className="w-full px-6 py-3 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-lg font-bold hover:scale-105 transition-transform shadow-lg shadow-cyan-500/50 disabled:opacity-50"
                   >
-                    {formStatus === 'sending' ? 'Sending...' : 'Send Message'}
+                    Send Message
                   </button>
-                  {formStatus === 'success' && (
-                    <p className="text-green-400 text-center text-sm">Opening your email client...</p>
-                  )}
                 </form>
               </div>
             </div>
@@ -741,4 +776,4 @@ export default function ManifestoriumSite() {
       </footer>
     </div>
   );
-          }
+    }
