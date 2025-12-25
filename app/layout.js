@@ -1,10 +1,13 @@
-import './globals.css'
+import './globals.css';
+import { Analytics } from '@vercel/analytics/react';
+
 export const metadata = {
   title: {
     default: "For Magical Use Only",
     template: "%s · For Magical Use Only",
   },
-  description: "The Manifestorium - Desert Art Tech Makerspace. Off-grid art + fabrication. Desert salvage. Handmade myth.",
+  description:
+    "The Manifestorium - Desert Art Tech Makerspace. Off-grid art + fabrication. Desert salvage. Handmade myth.",
   icons: {
     icon: "/favicon.ico",
     shortcut: "/favicon.ico",
