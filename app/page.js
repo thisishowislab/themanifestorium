@@ -1250,4 +1250,4 @@ export default function ManifestoriumSite() {
   );
         }div>
   );
-                      }
+        }     
