@@ -1,5 +1,5 @@
 // components/ProductCard.jsx
-import Link from 'next/link';
+import Link from "next/link";
 
 export default function ProductCard({ product }) {
   const {
@@ -8,36 +8,37 @@ export default function ProductCard({ product }) {
     price,
     category,
     subcategory,
-    image,
     altText,
     attributes = [],
   } = product;
 
- const imageUrls = (product.images || [])
-  .map(a => a?.fields?.file?.url)
-  .filter(Boolean)
-  .map(u => `https:${u}`);
+  const imageUrls = (product.images || [])
+    .map((a) => a?.fields?.file?.url)
+    .filter(Boolean)
+    .map((u) => (u.startsWith("http") ? u : `https:${u}`));
 
-{imageUrls.length > 0 && (
-  <div className="grid gap-2 grid-cols-2">
-    {imageUrls.map((url, idx) => (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img key={url} src={url} alt={product.altText || product.name} className="w-full rounded-lg object-cover" />
-    ))}
-  </div>
-)}
-
+  const heroUrl = imageUrls[0]; // fallback hero
 
   return (
     <article className="product-card border rounded-lg p-3 bg-black/40 text-white flex flex-col gap-2">
-      {imageUrl && (
+      {/* Images */}
+      {imageUrls.length > 0 && (
         <Link href={`/products/${slug}`} className="block overflow-hidden rounded-md">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={imageUrl}
-            alt={altText || name}
-            className="w-full h-48 object-cover transition-transform duration-200 hover:scale-105"
-          />
+          <div className={imageUrls.length > 1 ? "grid gap-2 grid-cols-2" : ""}>
+            {imageUrls.slice(0, 4).map((url) => (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                key={url}
+                src={url}
+                alt={altText || name}
+                className={
+                  imageUrls.length > 1
+                    ? "w-full aspect-square rounded-lg object-cover"
+                    : "w-full h-48 object-cover transition-transform duration-200 hover:scale-105"
+                }
+              />
+            ))}
+          </div>
         </Link>
       )}
 
@@ -50,18 +51,18 @@ export default function ProductCard({ product }) {
           {category && <span>{category}</span>}
           {subcategory && (
             <>
-              {' '}• <span>{subcategory}</span>
+              {" "}• <span>{subcategory}</span>
             </>
           )}
         </div>
 
         <div className="font-bold text-base mt-1">
-          {typeof price === 'number' ? `$${price.toFixed(2)}` : ''}
+          {typeof price === "number" ? `$${price.toFixed(2)}` : ""}
         </div>
 
         {attributes.length > 0 && (
           <div className="flex flex-wrap gap-1 mt-1 text-xs text-gray-200">
-            {attributes.slice(0, 3).map(attr => (
+            {attributes.slice(0, 3).map((attr) => (
               <span
                 key={attr}
                 className="px-2 py-0.5 rounded-full bg-purple-700/60 border border-purple-400/50"
