@@ -776,4 +776,4 @@ export default function ManifestoriumSite() {
       </footer>
     </div>
   );
-}
+    }
