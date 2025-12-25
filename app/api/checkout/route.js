@@ -5,13 +5,8 @@ import { NextResponse } from "next/server";
 export const runtime = "nodejs";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://formagicaluseonly.com";
 
-/**
- * Expects JSON:
- * { priceId, mode: "payment"|"subscription", quantity, requireShipping?: boolean }
- */
 export async function POST(req) {
   try {
     const body = await req.json();
@@ -32,21 +27,15 @@ export async function POST(req) {
       allow_promotion_codes: true,
     };
 
-    // Collect address only for physical goods
     if (requireShipping && mode === "payment") {
       sessionParams.shipping_address_collection = {
-        allowed_countries: ["US"],
+        allowed_countries: ["US", "DE"],
       };
 
-      // If you want to force billing address too:
       sessionParams.billing_address_collection = "required";
-
-      // Optional later: real Stripe shipping rates
-      // sessionParams.shipping_options = [{ shipping_rate: "shr_..." }];
     }
 
     const session = await stripe.checkout.sessions.create(sessionParams);
-
     return NextResponse.json({ url: session.url });
   } catch (err) {
     const msg = err?.message || String(err);
