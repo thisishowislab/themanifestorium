@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import {
   ShoppingCart, Menu, X, Zap, Cpu, Sparkles, ChevronRight,
-  Instagram, Mail, Home, Briefcase, Store, MapPin, Heart, MessageCircle
+  Mail, Home, Briefcase, Store, MapPin, Heart, MessageCircle
 } from 'lucide-react';
 
 export default function ManifestoriumSite() {
@@ -64,7 +64,9 @@ export default function ManifestoriumSite() {
     }
   };
 
-  const handleCheckout = async (priceId, itemName, mode = "payment", quantity = 1) => {
+  // ✅ Added productType so checkout route can decide shipping correctly
+  // productType: "product" | "tour" | "donation" | etc.
+  const handleCheckout = async (priceId, itemName, { mode = "payment", quantity = 1, productType = "product" } = {}) => {
     if (!priceId) {
       alert(`Missing Price ID for "${itemName}"`);
       return;
@@ -74,7 +76,7 @@ export default function ManifestoriumSite() {
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ priceId, mode, quantity }),
+        body: JSON.stringify({ priceId, mode, quantity, productType }),
       });
 
       const data = await res.json();
@@ -145,23 +147,35 @@ export default function ManifestoriumSite() {
       <nav className={`fixed w-full z-50 transition ${scrollY > 50 ? 'bg-black/90 backdrop-blur-lg shadow-lg shadow-cyan-500/20' : ''}`}>
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <button onClick={() => setActiveSection('home')} className="flex items-center gap-3 hover:opacity-80 transition">
-            <Sparkles className="text-cyan-400" size={28} />
+            <Sparkles className="text-cyan-400 animate-pulse" size={28} />
             <h1 className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent">
               THE MANIFESTORIUM
             </h1>
           </button>
-          <div className="hidden md:flex gap-2">
+
+          <div className="hidden md:flex gap-2 items-center">
             <Nav section="home" icon={Home}>Home</Nav>
             <Nav section="portfolio" icon={Briefcase}>Portfolio</Nav>
             <Nav section="shop" icon={Store}>Shop</Nav>
             <Nav section="tours" icon={MapPin}>Tours</Nav>
             <Nav section="support" icon={Heart}>Support</Nav>
             <Nav section="contact" icon={MessageCircle}>Contact</Nav>
+
+            {/* ✅ Real route link to your existing page */}
+            <Link
+              href="/community"
+              className="ml-2 px-4 py-2 rounded-lg border border-cyan-500/30 hover:border-cyan-400 text-gray-200 hover:text-white transition"
+              onClick={() => setMenuOpen(false)}
+            >
+              Community
+            </Link>
           </div>
+
           <button className="md:hidden text-cyan-400" onClick={() => setMenuOpen(!menuOpen)}>
             {menuOpen ? <X size={28} /> : <Menu size={28} />}
           </button>
         </div>
+
         {menuOpen && (
           <div className="md:hidden bg-black/95 backdrop-blur-lg border-t border-cyan-500/30 p-6 flex flex-col gap-2">
             <Nav section="home" icon={Home}>Home</Nav>
@@ -170,6 +184,14 @@ export default function ManifestoriumSite() {
             <Nav section="tours" icon={MapPin}>Tours</Nav>
             <Nav section="support" icon={Heart}>Support</Nav>
             <Nav section="contact" icon={MessageCircle}>Contact</Nav>
+
+            <Link
+              href="/community"
+              className="mt-2 px-4 py-3 rounded-lg border border-cyan-500/30 hover:border-cyan-400 text-gray-200 hover:text-white transition text-center"
+              onClick={() => setMenuOpen(false)}
+            >
+              Community
+            </Link>
           </div>
         )}
       </nav>
@@ -346,7 +368,6 @@ export default function ManifestoriumSite() {
                         <div className="flex items-center justify-between mt-auto">
                           <span className="text-2xl font-bold text-purple-400">${product.price}</span>
 
-                          {/* Button: goes to product page if slug exists, else disabled */}
                           {product.slug ? (
                             <span className="px-4 py-2 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-lg font-semibold">
                               View
@@ -361,7 +382,6 @@ export default function ManifestoriumSite() {
                     </div>
                   );
 
-                  // Whole card clickable if slug exists:
                   return product.slug ? (
                     <Link
                       key={product.id}
@@ -391,7 +411,7 @@ export default function ManifestoriumSite() {
               Local Tours
             </h2>
             <p className="text-xl text-gray-400 mb-12">
-              Tours have their own listings now. Tap one to pick a time and variant.
+              Guided desert weirdness. Pick a tour. Book it. Show up curious.
             </p>
 
             {loading ? (
@@ -409,7 +429,7 @@ export default function ManifestoriumSite() {
                   onClick={() => setActiveSection('contact')}
                   className="px-8 py-4 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-lg font-bold text-lg hover:scale-105 transition-transform shadow-lg shadow-cyan-500/50"
                 >
-                  Book Your Tour <ChevronRight className="inline ml-2" />
+                  Ask About Tours <ChevronRight className="inline ml-2" />
                 </button>
               </div>
             ) : (
@@ -439,7 +459,11 @@ export default function ManifestoriumSite() {
                       <div className="flex items-center justify-between">
                         <span className="text-3xl font-bold text-purple-400">${tour.price}</span>
                         <button
-                          onClick={() => tour.stripePriceId ? handleCheckout(tour.stripePriceId, tour.name, "payment") : setActiveSection('contact')}
+                          onClick={() =>
+                            tour.stripePriceId
+                              ? handleCheckout(tour.stripePriceId, tour.name, { mode: "payment", productType: "tour" })
+                              : setActiveSection('contact')
+                          }
                           className="px-6 py-2 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-lg font-semibold hover:scale-105 transition-transform"
                         >
                           Book
@@ -473,7 +497,11 @@ export default function ManifestoriumSite() {
                 {donationTiers.map((tier) => (
                   <button
                     key={tier.id}
-                    onClick={() => tier.stripePriceId ? handleCheckout(tier.stripePriceId, tier.name, "subscription") : alert('Add Stripe Price ID in variantUx')}
+                    onClick={() =>
+                      tier.stripePriceId
+                        ? handleCheckout(tier.stripePriceId, tier.name, { mode: "subscription", productType: "donation" })
+                        : alert('Add Stripe Price ID in variantUx')
+                    }
                     className="p-6 rounded-xl border-2 border-cyan-500/30 hover:border-cyan-400 hover:bg-cyan-500/10 transition-all hover:scale-105 min-h-[200px] flex flex-col justify-between"
                   >
                     <div>
@@ -537,10 +565,6 @@ export default function ManifestoriumSite() {
                     <a href="mailto:thisishowislab@gmail.com" className="flex items-center gap-3 text-purple-300 hover:text-purple-400 transition-colors">
                       <Mail size={24} />
                       <span className="text-sm">thisishowislab@gmail.com</span>
-                    </a>
-                    <a href="https://instagram.com/themanifestorium" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 text-purple-300 hover:text-purple-400 transition-colors">
-                      <Instagram size={24} />
-                      <span>@themanifestorium</span>
                     </a>
                   </div>
                 </div>
@@ -613,9 +637,6 @@ export default function ManifestoriumSite() {
           </div>
           <p className="text-gray-400 text-sm">© 2025 For Magical Use Only • Slab City, CA</p>
           <div className="flex gap-4">
-            <a href="https://instagram.com/themanifestorium" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-cyan-400 transition-colors">
-              <Instagram size={20} />
-            </a>
             <a href="mailto:thisishowislab@gmail.com" className="text-gray-400 hover:text-cyan-400 transition-colors">
               <Mail size={20} />
             </a>
@@ -624,4 +645,4 @@ export default function ManifestoriumSite() {
       </footer>
     </div>
   );
-}
+        }
