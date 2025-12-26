@@ -1,4 +1,9 @@
 // components/ProductCard.jsx
+{process.env.NODE_ENV !== "production" && (
+  <div className="text-[10px] opacity-70 break-all">
+    {imageUrls?.[0] || "NO IMAGE URL"}
+  </div>
+)}
 import Link from "next/link";
 
 export default function ProductCard({ product }) {
