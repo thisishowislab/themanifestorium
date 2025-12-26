@@ -6,55 +6,70 @@ export const runtime = "nodejs";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
-const ALLOWED_COUNTRIES = [
-  "US",
-  "CA",
-  "DE", // Germany
-  // add more later if you want
-];
+// Countries you’re willing to ship to (only used when shipping is enabled)
+const ALLOWED_COUNTRIES = ["US", "CA", "DE"];
+
+function siteUrl() {
+  return process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+}
+
+function getShippingOptions() {
+  // Add as many as you want. Stripe will show the ones that apply to the address.
+  const opts = [];
+
+  const localPickup = process.env.STRIPE_SHIPPING_RATE_LOCAL_PICKUP;
+  const usGround = process.env.STRIPE_SHIPPING_RATE_US_GROUND;
+  const usPriority = process.env.STRIPE_SHIPPING_RATE_US_PRIORITY;
+  const intl = process.env.STRIPE_SHIPPING_RATE_INTL;
+
+  if (localPickup) opts.push({ shipping_rate: localPickup });
+  if (usGround) opts.push({ shipping_rate: usGround });
+  if (usPriority) opts.push({ shipping_rate: usPriority });
+  if (intl) opts.push({ shipping_rate: intl });
+
+  return opts;
+}
 
 export async function POST(req) {
   try {
-    const { priceId, quantity = 1, mode = "payment" } = await req.json();
+    const body = await req.json();
 
+    // Required
+    const priceId = body.priceId;
     if (!priceId) {
       return NextResponse.json({ error: "Missing priceId" }, { status: 400 });
     }
 
-    const shippingUS = process.env.STRIPE_SHIPPING_RATE_US || null;
-    const shippingIntl = process.env.STRIPE_SHIPPING_RATE_INTL || null;
+    // Optional inputs (frontend can pass these)
+    const quantity = Number(body.quantity || 1);
+    const mode = body.mode || "payment"; // "payment" (one-time) OR "subscription"
+    const needsShipping = Boolean(body.needsShipping); // default false unless explicitly true
 
-    // Build shipping options list (Stripe will only show options valid for the entered address)
-    const shipping_options = [];
-    if (shippingUS) shipping_options.push({ shipping_rate: shippingUS });
-    if (shippingIntl) shipping_options.push({ shipping_rate: shippingIntl });
-
-    // If you want shipping required for physical products, keep this ON:
-    const needsShipping = true;
+    // Make sure we NEVER attach shipping to subscription mode
+    const shouldAttachShipping = mode === "payment" && needsShipping === true;
 
     const session = await stripe.checkout.sessions.create({
       mode,
+
       line_items: [
         {
           price: priceId,
-          quantity: Number(quantity || 1),
+          quantity,
         },
       ],
-      success_url: `${process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"}/?success=1`,
-      cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"}/?canceled=1`,
 
-      ...(needsShipping
-        ? {
-            shipping_address_collection: { allowed_countries: ALLOWED_COUNTRIES },
-            shipping_options: shipping_options.length ? shipping_options : undefined,
-          }
-        : {}),
+      success_url: `${siteUrl()}/?success=1`,
+      cancel_url: `${siteUrl()}/?canceled=1`,
 
-      // Optional: lets you view address in Stripe dashboard
+      // Billing address can stay auto for all modes
       billing_address_collection: "auto",
 
-      // Optional: collect phone
-      // phone_number_collection: { enabled: true },
+      ...(shouldAttachShipping
+        ? {
+            shipping_address_collection: { allowed_countries: ALLOWED_COUNTRIES },
+            shipping_options: getShippingOptions(),
+          }
+        : {}),
     });
 
     return NextResponse.json({ url: session.url });
