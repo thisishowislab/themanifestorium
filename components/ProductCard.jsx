@@ -11,13 +11,19 @@ export default function ProductCard({ product }) {
     altText,
     attributes = [],
   } = product;
+  
+const rawAssets = Array.isArray(product.images)
+  ? product.images
+  : product.image
+    ? [product.image]
+    : [];
 
-  const imageUrls = (product.images || [])
-    .map((a) => a?.fields?.file?.url)
-    .filter(Boolean)
-    .map((u) => (u.startsWith("http") ? u : `https:${u}`));
+const imageUrls = rawAssets
+  .map((a) => a?.fields?.file?.url || a?.file?.url || a?.url)
+  .filter(Boolean)
+  .map((u) => (u.startsWith("http") ? u : `https:${u}`));
 
-  const heroUrl = imageUrls[0]; // fallback hero
+const heroUrl = imageUrls[0];
 
   return (
     <article className="product-card border rounded-lg p-3 bg-black/40 text-white flex flex-col gap-2">
