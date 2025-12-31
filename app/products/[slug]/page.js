@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, Sparkles, Hand, Boxes } from 'lucide-react';
 
 export default function ProductPage() {
   const params = useParams();
@@ -168,9 +168,9 @@ export default function ProductPage() {
       <button
         onClick={backToShop}
         className="fixed top-4 left-4 z-50 p-3 rounded-full bg-black/70 border border-cyan-500/30 hover:border-cyan-400 backdrop-blur"
-        aria-label="Back to Shop"
+        aria-label="Return to Portal"
       >
-        <X />
+        <ChevronLeft />
       </button>
 
       <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-10">
@@ -239,42 +239,54 @@ export default function ProductPage() {
 
         {/* Details */}
         <div>
-          <h1 className="text-4xl font-black bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
+          <div className="flex items-center gap-2 text-cyan-500/50 mb-2 font-mono text-xs uppercase tracking-widest">
+            <Sparkles size={12} /> Encountered in the Manifestorium
+          </div>
+          <h1 className="text-4xl font-black text-white mb-4">
             {product.name}
           </h1>
 
           {product.description && (
-            <p className="text-gray-300 mt-4 leading-relaxed">{product.description}</p>
+            <p className="text-gray-300 mt-4 leading-relaxed whitespace-pre-line border-l-2 border-cyan-500/20 pl-4">
+              {product.description}
+            </p>
           )}
 
-          <div className="mt-6 text-3xl font-bold text-purple-400">
+          <div className="mt-6 text-3xl font-bold text-white font-mono">
             ${Number(displayPrice || 0)}
           </div>
 
           {/* Variant selector */}
           {variants && (
-            <div className="mt-6">
-              <label className="block text-sm font-semibold text-cyan-400 mb-2">Choose a variant</label>
-              <select
-                value={variantKey || ''}
-                onChange={(e) => onVariantChange(e.target.value)}
-                className="w-full px-4 py-3 bg-black/50 border border-cyan-500/30 rounded-lg focus:border-cyan-400 focus:outline-none text-white"
-              >
+            <div className="mt-8">
+              <label className="block text-[10px] font-bold text-cyan-400 mb-3 uppercase tracking-[0.2em]">Select a Form</label>
+              <div className="grid grid-cols-2 gap-2">
                 {Object.entries(variants).map(([key, v]) => (
-                  <option key={key} value={key}>
-                    {v?.label || key} — ${Number(v?.price || 0)}
-                  </option>
+                  <button
+                    key={key}
+                    onClick={() => onVariantChange(key)}
+                    className={`px-4 py-3 rounded-md border text-xs font-bold transition-all ${
+                      variantKey === key 
+                        ? 'bg-cyan-500 border-cyan-400 text-black shadow-[0_0_15px_rgba(6,182,212,0.4)]' 
+                        : 'bg-black border-cyan-500/30 text-cyan-500/50 hover:border-cyan-400'
+                    }`}
+                  >
+                    {v?.label || key}
+                  </button>
                 ))}
-              </select>
+              </div>
             </div>
           )}
 
           <button
             onClick={handleCheckout}
             disabled={checkoutLoading || !displayPriceId}
-            className="mt-8 w-full px-6 py-4 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-lg font-bold text-lg hover:scale-105 transition-transform shadow-lg shadow-cyan-500/30 disabled:opacity-50 disabled:hover:scale-100"
+            className="mt-8 w-full group relative overflow-hidden px-6 py-4 bg-white text-black rounded-lg font-black text-lg hover:bg-cyan-400 transition-colors disabled:opacity-50"
           >
-            {checkoutLoading ? 'Loading Checkout...' : (displayPriceId ? 'Buy Now' : 'Unavailable')}
+            <div className="relative z-10 flex items-center justify-center gap-2">
+              <Hand size={20} className="group-hover:rotate-12 transition-transform" />
+              {checkoutLoading ? 'Preparing Signal...' : (displayPriceId ? 'Acquire This Form' : 'Signal Lost')}
+            </div>
           </button>
 
           {!displayPriceId && (
@@ -285,23 +297,29 @@ export default function ProductPage() {
 
           {/* Extra fields */}
           {(product.careInstructions || product.disclaimer) && (
-            <div className="mt-10 space-y-6">
+            <div className="mt-12 space-y-4">
               {product.careInstructions && (
-                <div className="p-5 rounded-xl border border-cyan-500/20 bg-black/40">
-                  <h3 className="text-cyan-400 font-bold mb-2">Care Instructions</h3>
-                  <p className="text-gray-300 whitespace-pre-wrap leading-relaxed">
+                <details className="group border-b border-white/10 pb-4">
+                  <summary className="flex items-center justify-between cursor-pointer list-none">
+                    <span className="text-xs font-bold uppercase tracking-widest text-cyan-400">Care Instructions</span>
+                    <ChevronRight size={16} className="group-open:rotate-90 transition-transform" />
+                  </summary>
+                  <p className="mt-4 text-sm text-gray-400 leading-relaxed whitespace-pre-line">
                     {product.careInstructions}
                   </p>
-                </div>
+                </details>
               )}
 
               {product.disclaimer && (
-                <div className="p-5 rounded-xl border border-purple-500/20 bg-black/40">
-                  <h3 className="text-purple-300 font-bold mb-2">Disclaimer</h3>
-                  <p className="text-gray-300 whitespace-pre-wrap leading-relaxed">
+                <details className="group border-b border-white/10 pb-4">
+                  <summary className="flex items-center justify-between cursor-pointer list-none">
+                    <span className="text-xs font-bold uppercase tracking-widest text-purple-400">Disclaimer</span>
+                    <ChevronRight size={16} className="group-open:rotate-90 transition-transform" />
+                  </summary>
+                  <p className="mt-4 text-sm text-gray-400 leading-relaxed italic opacity-80">
                     {product.disclaimer}
                   </p>
-                </div>
+                </details>
               )}
             </div>
           )}
@@ -310,3 +328,4 @@ export default function ProductPage() {
     </div>
   );
 }
+
