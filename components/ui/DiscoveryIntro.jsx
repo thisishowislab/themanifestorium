@@ -4,10 +4,10 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const WORDS = [
-  "DESERT ART-TECH",
-  "SLAB CITY SALVAGE",
-  "FOR MAGICAL USE ONLY",
-  "THE MANIFESTORIUM"
+  "Somewhere in the desert….",
+  "Beyond the edge of everything known…",
+  "a quiet kind of magic remains…",
+  "The Manifestorium. where forgotten things find their value."
 ];
 
 export default function DiscoveryIntro({ onComplete }) {
@@ -18,7 +18,7 @@ export default function DiscoveryIntro({ onComplete }) {
       const timer = setTimeout(onComplete, 1000);
       return () => clearTimeout(timer);
     }
-    const timer = setTimeout(() => setIndex(prev => prev + 1), 3000);
+    const timer = setTimeout(() => setIndex(prev => prev + 1), 3500);
     return () => clearTimeout(timer);
   }, [index, onComplete]);
 
@@ -27,44 +27,54 @@ export default function DiscoveryIntro({ onComplete }) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[100] bg-black flex flex-center items-center justify-center overflow-hidden"
+      className="fixed inset-0 z-[100] bg-[#0a0a0a] flex items-center justify-center overflow-hidden font-serif"
     >
-      {/* Glitchy Grain Overlay */}
-      <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[url('https://media.giphy.com/media/oEI9uWUicGvPK/giphy.gif')] mix-blend-screen" />
+      {/* Dynamic UV/Neon Gradient Backdrop */}
+      <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_50%_50%,rgba(6,182,212,0.2),rgba(168,85,247,0.1),transparent_70%)]" />
+      
+      {/* Glitchy Dust/Grain Overlay */}
+      <div className="absolute inset-0 opacity-[0.05] pointer-events-none mix-blend-screen bg-[url('https://media.giphy.com/media/oEI9uWUicGvPK/giphy.gif')]" />
       
       <AnimatePresence mode="wait">
         {index < WORDS.length && (
           <motion.div
             key={WORDS[index]}
-            initial={{ opacity: 0, scale: 0.95, filter: "blur(10px)" }}
+            initial={{ opacity: 0, y: 10, filter: "blur(8px)" }}
             animate={{ 
               opacity: 1, 
-              scale: 1, 
+              y: 0, 
               filter: "blur(0px)",
-              textShadow: ["0 0 0px #0ff", "0 0 20px #0ff", "0 0 0px #0ff"]
+              color: ["#fff", "#99f", "#fff"]
             }}
-            exit={{ opacity: 0, scale: 1.05, filter: "blur(10px)" }}
-            transition={{ duration: 1.5 }}
-            className="text-center"
+            exit={{ opacity: 0, y: -10, filter: "blur(8px)" }}
+            transition={{ duration: 2, ease: "easeInOut" }}
+            className="text-center px-6 max-w-4xl"
           >
-            <h1 className="text-3xl md:text-5xl font-mono tracking-[0.3em] text-cyan-400 uppercase leading-relaxed">
+            <h1 className="text-2xl md:text-4xl italic tracking-wide leading-relaxed font-light text-white/90">
               {WORDS[index]}
             </h1>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* CRT Scanline Effect */}
-      <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_2px,3px_100%]" />
-      
-      {/* Scanning Line */}
-      <motion.div 
-        animate={{ top: ['0%', '100%'] }}
-        transition={{ duration: 6, repeat: Infinity, ease: "linear" }}
-        className="absolute left-0 right-0 h-[1px] bg-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.5)] z-10"
-      />
+      {/* Replay/Skip Controls */}
+      <div className="absolute bottom-10 left-10 right-10 flex justify-between items-center text-[10px] uppercase tracking-[0.3em] text-white/30 font-mono">
+        <button 
+          onClick={onComplete}
+          className="hover:text-cyan-400 transition-colors cursor-pointer"
+        >
+          [ Skip Observation ]
+        </button>
+        <div className="flex gap-4">
+          <span className="animate-pulse">Active Signal: High</span>
+        </div>
+      </div>
+
+      {/* Subtle CRT Scanline */}
+      <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.1)_50%)] bg-[length:100%_4px]" />
     </motion.div>
   );
 }
+
 
 
