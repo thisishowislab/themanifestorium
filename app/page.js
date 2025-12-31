@@ -387,13 +387,12 @@ export default function ManifestoriumSite() {
                             <button
                               onClick={(e) => {
                                 e.stopPropagation(); // don’t trigger card navigation
-                                handleCheckout(product.stripePriceId, product.name, product.price, "payment", 1, true);
+                                openProduct(product);
                               }}
                               className="px-4 py-2 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-lg font-semibold hover:scale-105 transition-transform"
-                              disabled={!product.stripePriceId}
-                              title={!product.stripePriceId ? "Missing Stripe Price ID" : "Buy now"}
+                              title="View details"
                             >
-                              Buy Now
+                              View Details
                             </button>
                           </div>
 
@@ -743,4 +742,5 @@ export default function ManifestoriumSite() {
     </>
   );
 }
+
 
