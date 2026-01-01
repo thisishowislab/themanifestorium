@@ -1,14 +1,13 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { ShoppingCart, Menu, X, Zap, Cpu, Sparkles, ChevronRight, Instagram, Mail, Home, Briefcase, Store, MapPin, Heart, MessageCircle, Search, Bus, Tent, Archive } from 'lucide-react';
 import DiscoveryIntro from '../components/ui/DiscoveryIntro';
 import { AnimatePresence } from 'framer-motion';
 
 export default function ManifestoriumSite() {
   const router = useRouter();
-  const searchParams = useSearchParams();
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState('home');
@@ -45,12 +44,12 @@ export default function ManifestoriumSite() {
 
   // NEW: open specific section from URL query: /?section=shop
   useEffect(() => {
-    const section = searchParams?.get('section');
-    if (section && ['home','portfolio','shop','tours','support','contact'].includes(section)) {
-      setActiveSection(section);
-      window.scrollTo({ top: 0, behavior: 'instant' });
-    }
-  }, [searchParams]);
+  const section = new URLSearchParams(window.location.search).get('section');
+  if (section && ['home','portfolio','shop','tours','support','contact'].includes(section)) {
+    setActiveSection(section);
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }
+}, []);
 
   const fetchCatalogData = async () => {
     try {
