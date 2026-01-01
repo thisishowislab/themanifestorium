@@ -110,6 +110,30 @@ function extractDefaultVariant(variantUxRaw) {
   return { price, stripePriceId };
 }
 
+/**
+ * Helpers for flexible Contentful fields
+ */
+function pickFirstString(fields, keys) {
+  for (const k of keys) {
+    const v = fields?.[k];
+    if (typeof v === "string" && v.trim()) return v.trim();
+  }
+  return "";
+}
+
+function pickFirstStringArray(fields, keys) {
+  for (const k of keys) {
+    const v = fields?.[k];
+    if (Array.isArray(v)) {
+      const out = v
+        .map(x => (typeof x === "string" ? x.trim() : ""))
+        .filter(Boolean);
+      if (out.length) return out;
+    }
+  }
+  return [];
+}
+
 export async function GET() {
   try {
     if (!SPACE_ID || !ACCESS_TOKEN) {
@@ -172,15 +196,45 @@ export async function GET() {
       const isTier = Boolean(f.tierName || f.tierDescription);
 
       if (isProduct) {
+        // These key lists let you rename Contentful fields without breaking the site.
+        const category = pickFirstString(f, [
+          "category",
+          "productCategory",
+          "productType",
+          "collection",
+          "group",
+        ]);
+
+        const subcategory = pickFirstString(f, [
+          "subcategory",
+          "subCategory",
+          "productSubcategory",
+          "series",
+          "line",
+        ]);
+
+        const tags = pickFirstStringArray(f, [
+          "tags",
+          "keywords",
+          "productTags",
+        ]);
+
         products.push({
           id: item.sys.id,
           slug: f.slug || null,
           name: f.productName || "Untitled Product",
           price: mergedPrice,
           description: f.productDescription || "",
+
+          // NEW: category fields for Shop filters
+          category,
+          subcategory,
+          tags,
+
           // New image structure
-          image,            // optimized for grid
+          image,             // optimized for grid
           images: imageSets, // array of {original, grid, main, thumb}
+
           stripePriceId: mergedPriceId,
           variantUx: safeJson(f.variantUx) || null,
 
