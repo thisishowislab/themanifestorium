@@ -211,17 +211,14 @@ export default function ManifestoriumSite() {
                 <br />
                 <span>Fabrication Station</span>
               </h2>
-
-              <p className="text-xl md:text-2xl text-gray-300 mb-6 max-w-3xl mx-auto leading-relaxed">
-                Where off-grid tech, desert salvage, and handmade myth collide to prove that creation doesn't belong to the rich, the plugged-in, or the polished.
+              <p className="text-xl md:text-2xl text-gray-300 mb-8 max-w-3xl mx-auto leading-relaxed">
+                Where off-grid tech, desert salvage, and handmade myth collide to prove that
+                <span className="text-cyan-400 font-bold"> creation doesn't belong to the rich</span>, the plugged-in, or the polished.
               </p>
 
+              {/* NEW paragraph: For Magical Use Only */}
               <p className="text-lg md:text-xl text-gray-300 mb-8 max-w-3xl mx-auto leading-relaxed">
                 “For Magical Use Only” means these objects are not optimized, mass-produced, or pretending to be perfect. They are experiments. They are companions. They are proof that meaning can be fabricated from almost nothing.
-              </p>
-
-              <p className="text-lg md:text-xl text-gray-300 mb-10 max-w-3xl mx-auto leading-relaxed">
-                Everything is an experiment. You're invited to participate, not spectate. With improvisation as law and tech as a paintbrush, your weirdest ideas are suddenly fair game.
               </p>
 
               <div className="flex flex-wrap gap-4 justify-center">
@@ -238,11 +235,11 @@ export default function ManifestoriumSite() {
                   Shop Art Tech
                 </button>
               </div>
-
               <div className="mt-16 p-8 bg-gradient-to-r from-purple-900/30 to-cyan-900/30 rounded-2xl border border-cyan-500/30 backdrop-blur-sm">
                 <p className="text-lg leading-relaxed">
-                  <span className="text-cyan-400 font-bold">For Magical Use Only</span>{' '}
-                  means these objects are not optimized, mass-produced, or pretending to be perfect. They are experiments. They are companions. They are proof that meaning can be fabricated from almost nothing.
+                  <span className="text-cyan-400 font-bold">Everything is an experiment.</span>
+                  {' '}You're invited to participate, not spectate. Improvisation is law, tech is a paintbrush,
+                  and your weirdest ideas are suddenly fair game.
                 </p>
               </div>
             </div>
@@ -746,6 +743,6 @@ export default function ManifestoriumSite() {
           </div>
         </footer>
       </div>
-  
->    );                           
-}                                                                                                                                                                                                                                                  
+    </>
+  );
+    }
