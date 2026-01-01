@@ -211,10 +211,19 @@ export default function ManifestoriumSite() {
                 <br />
                 <span>Fabrication Station</span>
               </h2>
-              <p className="text-xl md:text-2xl text-gray-300 mb-8 max-w-3xl mx-auto leading-relaxed">
-                Where off-grid tech, desert salvage, and handmade myth collide to prove that
-                <span className="text-cyan-400 font-bold"> creation doesn't belong to the rich</span>, the plugged-in, or the polished.
+
+              <p className="text-xl md:text-2xl text-gray-300 mb-6 max-w-3xl mx-auto leading-relaxed">
+                Where off-grid tech, desert salvage, and handmade myth collide to prove that creation doesn't belong to the rich, the plugged-in, or the polished.
               </p>
+
+              <p className="text-lg md:text-xl text-gray-300 mb-8 max-w-3xl mx-auto leading-relaxed">
+                “For Magical Use Only” means these objects are not optimized, mass-produced, or pretending to be perfect. They are experiments. They are companions. They are proof that meaning can be fabricated from almost nothing.
+              </p>
+
+              <p className="text-lg md:text-xl text-gray-300 mb-10 max-w-3xl mx-auto leading-relaxed">
+                Everything is an experiment. You're invited to participate, not spectate. With improvisation as law and tech as a paintbrush, your weirdest ideas are suddenly fair game.
+              </p>
+
               <div className="flex flex-wrap gap-4 justify-center">
                 <button
                   onClick={() => setActiveSection('portfolio')}
@@ -229,11 +238,11 @@ export default function ManifestoriumSite() {
                   Shop Art Tech
                 </button>
               </div>
+
               <div className="mt-16 p-8 bg-gradient-to-r from-purple-900/30 to-cyan-900/30 rounded-2xl border border-cyan-500/30 backdrop-blur-sm">
                 <p className="text-lg leading-relaxed">
-                  <span className="text-cyan-400 font-bold">Everything is an experiment.</span>
-                  {' '}You're invited to participate, not spectate. Improvisation is law, tech is a paintbrush,
-                  and your weirdest ideas are suddenly fair game.
+                  <span className="text-cyan-400 font-bold">For Magical Use Only</span>{' '}
+                  means these objects are not optimized, mass-produced, or pretending to be perfect. They are experiments. They are companions. They are proof that meaning can be fabricated from almost nothing.
                 </p>
               </div>
             </div>
@@ -305,7 +314,9 @@ export default function ManifestoriumSite() {
               <h2 className="text-5xl font-black mb-4 bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
                 Shop
               </h2>
-              <p className="text-xl text-gray-400 mb-8">Own a piece of the weird and wonderful</p>
+              <p className="text-xl text-gray-400 mb-8">
+                Objects here are grouped by temperament, not by product. Line browsed by category, follow what pulls at you and don't worry about choosing correctly. Most items exist in limited runs, small batches or single incarnations.
+              </p>
 
               {/* Search bar */}
               <div className="mb-10">
@@ -318,9 +329,6 @@ export default function ManifestoriumSite() {
                     className="w-full bg-transparent outline-none text-white placeholder:text-gray-500"
                   />
                 </div>
-                <p className="text-xs text-gray-500 mt-2">
-                  Tip: keep product names unique-ish so search feels psychic.
-                </p>
               </div>
 
               {loading ? (
@@ -425,7 +433,7 @@ export default function ManifestoriumSite() {
                 Local Tours
               </h2>
               <p className="text-xl text-gray-400 mb-12">
-                Experience creation in action - just 100 feet from Salvation Mountain
+                Experience creation in action just a hundred feet from Salvation Mountain. Step into our art tech makerspace, where salvaged desert materials meet fabrication. See printers, lasers, prototypes, and art.
               </p>
 
               {loading ? (
@@ -437,8 +445,7 @@ export default function ManifestoriumSite() {
                 <div className="bg-gradient-to-br from-cyan-900/30 to-purple-900/30 p-8 rounded-2xl border border-cyan-500/30">
                   <h3 className="text-3xl font-bold text-cyan-400 mb-4">Desert Creation Station Tours</h3>
                   <p className="text-gray-300 mb-6 leading-relaxed">
-                    Step into our art tech makerspace where salvaged desert materials meet cutting-edge fabrication.
-                    See 3D printers, laser cutters, and CNC machines bringing wild ideas to life in real-time.
+                    Experience creation in action just a hundred feet from Salvation Mountain. Step into our art tech makerspace, where salvaged desert materials meet fabrication. See printers, lasers, prototypes, and art.
                   </p>
                   <button
                     onClick={() => setActiveSection('contact')}
@@ -739,8 +746,6 @@ export default function ManifestoriumSite() {
           </div>
         </footer>
       </div>
-    </>
-  );
-}
-
-
+  
+>    );                           
+}                                                                                                                                                                                                                                                  
