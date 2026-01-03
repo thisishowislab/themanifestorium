@@ -7,7 +7,8 @@ const WORDS = [
   "Somewhere in the desert….",
   "Beyond the edge of everything known…",
   "a quiet kind of magic remains…",
-  "The Manifestorium. where forgotten things find their value."
+  "The Manifestorium. 
+  where forgotten things find their value."
 ];
 
 export default function DiscoveryIntro({ onComplete }) {
@@ -33,7 +34,7 @@ export default function DiscoveryIntro({ onComplete }) {
       <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_50%_50%,rgba(6,182,212,0.2),rgba(168,85,247,0.1),transparent_70%)]" />
       
       {/* Glitchy Dust/Grain Overlay */}
-      <div className="absolute inset-0 opacity-[0.05] pointer-events-none mix-blend-screen bg-[url('https://media.giphy.com/media/oEI9uWUicGvPK/giphy.gif')]" />
+      <div className="absolute inset-0 opacity-[0.05] pointer-events-none mix-blend-screen bg-[url('https://github.com/thisishowislab/themanifestorium/blob/6efdce4e097c772555e60fc6818aa9b484f1a12f/components/ui/lv_0_20260102183237.mp4')]" />
       
       <AnimatePresence mode="wait">
         {index < WORDS.length && (
