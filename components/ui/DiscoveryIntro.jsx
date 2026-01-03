@@ -33,7 +33,7 @@ export default function DiscoveryIntro({ onComplete }) {
       <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_50%_50%,rgba(6,182,212,0.2),rgba(168,85,247,0.1),transparent_70%)]" />
       
       {/* Glitchy Dust/Grain Overlay */}
-      <div className="absolute inset-0 opacity-[0.05] pointer-events-none mix-blend-screen bg-[url('https://media.giphy.com/media/oEI9uWUicGvPK/giphy.gif')]" />
+      <div className="absolute inset-0 opacity-[0.05] pointer-events-none mix-blend-screen bg-[url('https://github.com/thisishowislab/themanifestorium/blob/94fc17da3ec9dce250b603552ac8a5fe9d2efe5b/components/ui/lv_0_20260102183237.mp4')]" />
       
       <AnimatePresence mode="wait">
         {index < WORDS.length && (
