@@ -858,6 +858,7 @@ export default function ManifestoriumSite() {
                       >
                         <Mail size={24} />
                         <span className="text-sm">thisishowislab@gmail.com</span>
+                          </a>
                     </div>
                   </div>
 
