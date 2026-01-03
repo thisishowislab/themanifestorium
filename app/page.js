@@ -935,7 +935,6 @@ export default function ManifestoriumSite() {
             <p className="text-gray-400 text-sm">© 2025 The Manifestorium • Slab City, CA</p>
             <div className="flex gap-4">
             </div>
-          </div>
         </footer>
       </div>
     </>
