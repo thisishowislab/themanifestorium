@@ -858,16 +858,6 @@ export default function ManifestoriumSite() {
                       >
                         <Mail size={24} />
                         <span className="text-sm">thisishowislab@gmail.com</span>
-                      </a>
-                      <a
-                        href="https://instagram.com/themanifestorium"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-3 text-purple-300 hover:text-purple-400 transition-colors"
-                      >
-                        <Instagram size={24} />
-                        <span>@themanifestorium</span>
-                      </a>
                     </div>
                   </div>
 
@@ -944,17 +934,6 @@ export default function ManifestoriumSite() {
             </div>
             <p className="text-gray-400 text-sm">© 2025 The Manifestorium • Slab City, CA</p>
             <div className="flex gap-4">
-              <a
-                href="https://instagram.com/themanifestorium"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-gray-400 hover:text-cyan-400 transition-colors"
-              >
-                <Instagram size={20} />
-              </a>
-              <a href="mailto:thisishowislab@gmail.com" className="text-gray-400 hover:text-cyan-400 transition-colors">
-                <Mail size={20} />
-              </a>
             </div>
           </div>
         </footer>
