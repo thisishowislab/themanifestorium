@@ -12,53 +12,62 @@ const WORDS = [
 
 export default function DiscoveryIntro({ onComplete }) {
   const [index, setIndex] = useState(0);
+  const [skip, setSkip] = useState(false);
+  const [running, setRunning] = useState(true);
+
+  useEffect(() => {
+    if (!running || skip) return;
+
+    const timeout = setTimeout(() => {
+      setIndex(prev => prev + 1);
+    }, 4000);
+
+    return () => clearTimeout(timeout);
+  }, [index, running, skip]);
 
   useEffect(() => {
     if (index >= WORDS.length) {
-      const timer = setTimeout(onComplete, 1000);
-      return () => clearTimeout(timer);
+      setTimeout(() => {
+        setRunning(false);
+        onComplete?.();
+      }, 1200);
     }
-    const timer = setTimeout(() => setIndex(prev => prev + 1), 3500);
-    return () => clearTimeout(timer);
   }, [index, onComplete]);
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[100] bg-[#0a0a0a] flex items-center justify-center overflow-hidden font-serif"
-    >
-      {/* Dynamic UV/Neon Gradient Backdrop */}
-      <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_50%_50%,rgba(6,182,212,0.2),rgba(168,85,247,0.1),transparent_70%)]" />
-      
-      {/* Glitchy Dust/Grain Overlay */}
-      <div className="absolute inset-0 opacity-[0.05] pointer-events-none mix-blend-screen bg-[url('https://github.com/thisishowislab/themanifestorium/blob/94fc17da3ec9dce250b603552ac8a5fe9d2efe5b/components/ui/lv_0_20260102183237.mp4')]" />
-      
+    <motion.div className="fixed inset-0 flex items-center justify-center overflow-hidden bg-black">
+      <video
+        autoPlay
+        loop
+        muted
+        playsInline
+        poster="/overlays/manifest-orb.jpg"
+        className="absolute inset-0 h-full w-full object-cover opacity-70"
+      >
+        <source src="/overlays/lv_0_20260102183237.mp4" type="video/mp4" />
+      </video>
+
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+
       <AnimatePresence mode="wait">
         {index < WORDS.length && (
           <motion.div
             key={WORDS[index]}
-            initial={{ opacity: 0, y: 10, filter: "blur(8px)" }}
-            animate={{ 
-              opacity: 1, 
-              y: 0, 
-              filter: "blur(0px)",
-              color: ["#fff", "#99f", "#fff"]
-            }}
-            exit={{ opacity: 0, y: -10, filter: "blur(8px)" }}
-            transition={{ duration: 2, ease: "easeInOut" }}
-            className="text-center px-6 max-w-4xl"
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+            exit={{ opacity: 0, y: -16 }}
+            transition={{ duration: 1.8 }}
+            className=" rounded-3xl border border-white/20 bg-gradient-to-br from-white/5 via-white/0 to-transparent p-8 text-center max-w-xl"
           >
-            <h1 className="text-2xl md:text-4xl italic tracking-wide leading-relaxed font-light text-white/90">
+            <p className="text-xs tracking-[0.2em] uppercase text-white/60 mb-4">Discovery / Observation / Manifest</p>
+            <p className="text-3xl font-light text-white md:text-4xl">
               {WORDS[index]}
-            </h1>
+            </p>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Replay/Skip Controls */}
-      <div className="absolute bottom-10 left-10 right-10 flex justify-between items-center text-[10px] uppercase tracking-[0.3em] text-white/30 font-mono">
+      <div className="pointer-events-auto absolute inset-x-6 bottom-10 flex items-center justify-between text-white/80 text-xs tracking-[0.3em]">
         <button 
           onClick={onComplete}
           className="hover:text-cyan-400 transition-colors cursor-pointer"
@@ -70,11 +79,16 @@ export default function DiscoveryIntro({ onComplete }) {
         </div>
       </div>
 
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: running ? 1 : 0 }}
+        transition={{ duration: 2.2 }}
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle,rgba(255,255,255,0.08)_0%,rgba(0,0,0,0.95)_65%)] mix-blend-screen"
+      />
+
       {/* Subtle CRT Scanline */}
       <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.1)_50%)] bg-[length:100%_4px]" />
     </motion.div>
   );
 }
-
-
 
