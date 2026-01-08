@@ -4,6 +4,10 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const WORDS = [
+  "Somewhere in the desert….",
+  "Beyond the edge of everything known…",
+  "a quiet kind of magic remains…",
+  "The Manifestorium. where forgotten things find their value."
   'Somewhere in the desert….',
   'Beyond the edge of everything known…',
   'a quiet kind of magic remains…',
@@ -25,6 +29,7 @@ export default function DiscoveryIntro({ onComplete }) {
     if (!running || skip) return;
 
     const timeout = setTimeout(() => {
+      setIndex(prev => prev + 1);
       setIndex((prev) => prev + 1);
     }, 4000);
 
@@ -62,6 +67,7 @@ export default function DiscoveryIntro({ onComplete }) {
         transition={{ duration: 4, ease: 'easeOut' }}
       />
 
+      <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-black/90" />
       <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/40 to-black/90" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.08)_0%,rgba(0,0,0,0.9)_55%,rgba(0,0,0,1)_75%)]" />
       <div className="absolute top-0 left-0 right-0 h-24 bg-black/90" />
@@ -74,9 +80,14 @@ export default function DiscoveryIntro({ onComplete }) {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 1.4 }}
+            className="relative z-10 max-w-xl rounded-3xl border border-white/20 bg-gradient-to-br from-white/5 via-white/0 to-transparent p-8 text-center shadow-lg shadow-cyan-500/20"
             transition={{ duration: 2, ease: 'easeOut' }}
             className="relative z-10 flex w-full flex-col items-center justify-center px-6 text-center"
           >
+            <p className="text-xs tracking-[0.2em] uppercase text-white/60 mb-4">Discovery / Observation / Manifest</p>
+            <p className="text-3xl font-light text-white md:text-4xl">
+              {WORDS[index]}
             <p className="mx-auto font-serif text-[0.65rem] tracking-[0.6em] uppercase text-white/60 mb-6">
               Discovery / Observation / Manifest
             </p>
@@ -111,6 +122,7 @@ export default function DiscoveryIntro({ onComplete }) {
       <div className="pointer-events-none absolute inset-0 opacity-30 mix-blend-screen bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.15)_0%,rgba(0,0,0,0)_55%)]" />
 
       <div className="relative z-10 flex w-full items-end justify-between px-8 pb-10 text-xs text-white uppercase tracking-[0.35em]">
+        <button className="text-white/80 hover:text-white" onClick={handleComplete}>
         <button className="text-white/80 hover:text-white transition" onClick={handleComplete}>
           Skip Observation
         </button>
