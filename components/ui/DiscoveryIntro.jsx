@@ -85,7 +85,7 @@ export default function DiscoveryIntro({ onComplete }) {
             className="relative z-10 flex w-full flex-col items-center justify-center px-6 text-center"
           >
             <div className="mb-6 h-px w-20 bg-gradient-to-r from-transparent via-white/60 to-transparent" />
-            <p className="mx-auto w-full max-w-4xl font-serif text-2xl italic tracking-[0.2em] text-white/85 drop-shadow-[0_2px_12px_rgba(0,0,0,0.6)] md:text-3xl">
+            <p className="mx-auto w-full max-w-4xl text-center font-serif text-2xl italic tracking-[0.2em] text-white/85 drop-shadow-[0_2px_12px_rgba(0,0,0,0.6)] md:text-3xl">
               {WORDS[index]}
             </p>
             <div className="mt-6 h-px w-32 bg-gradient-to-r from-transparent via-white/40 to-transparent" />
