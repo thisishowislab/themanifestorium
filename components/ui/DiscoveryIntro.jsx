@@ -21,6 +21,12 @@ export default function DiscoveryIntro({ onComplete }) {
     onComplete?.();
   };
 
+  const handleReplay = () => {
+    setIndex(0);
+    setSkip(false);
+    setRunning(true);
+  };
+
   useEffect(() => {
     if (!running || skip) return;
 
@@ -36,7 +42,7 @@ export default function DiscoveryIntro({ onComplete }) {
       const endFade = setTimeout(() => {
         setRunning(false);
         onComplete?.();
-      }, 2200);
+      }, 3200);
       return () => clearTimeout(endFade);
     }
   }, [index, onComplete]);
@@ -74,24 +80,24 @@ export default function DiscoveryIntro({ onComplete }) {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 2, ease: 'easeOut' }}
+            transition={{ duration: 2.4, ease: 'easeOut' }}
             className="relative z-10 flex w-full flex-col items-center justify-center px-6 text-center"
           >
-            <p className="mx-auto font-serif text-[0.65rem] tracking-[0.6em] uppercase text-white/60 mb-6">
+            <p className="mx-auto font-serif text-[0.6rem] tracking-[0.7em] uppercase text-white/60 mb-6">
               Discovery / Observation / Manifest
             </p>
-            <div className="relative mx-auto max-w-4xl px-6">
+            <div className="relative mx-auto max-w-5xl px-6">
               <span className="absolute inset-0 translate-x-1 -translate-y-1 text-4xl md:text-6xl lg:text-7xl font-semibold text-cyan-400/20 blur-sm">
                 {WORDS[index]}
               </span>
               <span className="absolute inset-0 -translate-x-1 translate-y-1 text-4xl md:text-6xl lg:text-7xl font-semibold text-fuchsia-400/20 mix-blend-screen">
                 {WORDS[index]}
               </span>
-              <p className="relative font-serif text-4xl md:text-6xl lg:text-7xl font-semibold tracking-[0.08em] text-transparent bg-clip-text bg-gradient-to-br from-white via-cyan-100 to-fuchsia-200 drop-shadow-[0_0_45px_rgba(56,189,248,0.6)]">
+              <p className="relative font-serif text-4xl md:text-6xl lg:text-7xl font-semibold leading-tight tracking-[0.1em] text-transparent bg-clip-text bg-gradient-to-br from-white via-cyan-100 to-fuchsia-200 drop-shadow-[0_0_45px_rgba(56,189,248,0.6)]">
                 {WORDS[index]}
               </p>
             </div>
-            <div className="mt-6 flex items-center gap-3 text-[0.65rem] tracking-[0.5em] uppercase text-white/40">
+            <div className="mt-8 flex items-center gap-3 text-[0.6rem] tracking-[0.6em] uppercase text-white/40">
               <span className="h-px w-10 bg-white/30" />
               <span>Opening sequence</span>
               <span className="h-px w-10 bg-white/30" />
@@ -110,12 +116,17 @@ export default function DiscoveryIntro({ onComplete }) {
       />
       <div className="pointer-events-none absolute inset-0 opacity-30 mix-blend-screen bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.15)_0%,rgba(0,0,0,0)_55%)]" />
 
-      <div className="relative z-10 flex w-full items-end justify-between px-8 pb-10 text-xs text-white uppercase tracking-[0.35em]">
-        <button className="text-white/80 hover:text-white transition" onClick={handleComplete}>
-          Skip Observation
-        </button>
+      <div className="relative z-10 flex w-full items-end justify-between px-6 pb-6 text-[0.55rem] text-white uppercase tracking-[0.5em]">
+        <div className="flex items-center gap-6">
+          <button className="text-white/60 hover:text-white transition" onClick={handleComplete}>
+            Skip
+          </button>
+          <button className="text-white/40 hover:text-white/80 transition" onClick={handleReplay}>
+            Replay
+          </button>
+        </div>
         <div className="flex gap-4">
-          <span className="animate-pulse">Active Signal: High</span>
+          <span className="animate-pulse text-white/50">Active Signal: High</span>
         </div>
       </div>
 
