@@ -8,6 +8,10 @@ const WORDS = [
   "Beyond the edge of everything known…",
   "a quiet kind of magic remains…",
   "The Manifestorium. where forgotten things find their value."
+  'Somewhere in the desert….',
+  'Beyond the edge of everything known…',
+  'a quiet kind of magic remains…',
+  'The Manifestorium. where forgotten things find their value.'
 ];
 
 export default function DiscoveryIntro({ onComplete }) {
@@ -16,6 +20,7 @@ export default function DiscoveryIntro({ onComplete }) {
   const [running, setRunning] = useState(true);
 
   const handleComplete = () => {
+    setSkip(true);
     setRunning(false);
     onComplete?.();
   };
@@ -25,6 +30,7 @@ export default function DiscoveryIntro({ onComplete }) {
 
     const timeout = setTimeout(() => {
       setIndex(prev => prev + 1);
+      setIndex((prev) => prev + 1);
     }, 4000);
 
     return () => clearTimeout(timeout);
@@ -41,7 +47,7 @@ export default function DiscoveryIntro({ onComplete }) {
   }, [index, onComplete]);
 
   return (
-  <motion.div className="fixed inset-0 flex items-center justify-center overflow-hidden bg-black">
+    <motion.div className="fixed inset-0 flex items-center justify-center overflow-hidden bg-black">
       <video
     <motion.div
       className="fixed inset-0 z-[100] flex items-center justify-center overflow-hidden bg-black"
@@ -112,7 +118,7 @@ export default function DiscoveryIntro({ onComplete }) {
         className="pointer-events-none absolute inset-0 opacity-30 mix-blend-screen"
         style={{
           backgroundImage:
-            "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.6'/%3E%3C/svg%3E\")",
+            "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.6'/%3E%3C/svg%3E\")"
         }}
       />
       <div className="pointer-events-none absolute inset-0 opacity-30 mix-blend-screen bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.15)_0%,rgba(0,0,0,0)_55%)]" />
