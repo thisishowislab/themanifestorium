@@ -8,6 +8,10 @@ const WORDS = [
   "Beyond the edge of everything known…",
   "a quiet kind of magic remains…",
   "The Manifestorium. where forgotten things find their value."
+  'Somewhere in the desert….',
+  'Beyond the edge of everything known…',
+  'a quiet kind of magic remains…',
+  'The Manifestorium. where forgotten things find their value.'
 ];
 
 export default function DiscoveryIntro({ onComplete }) {
@@ -31,6 +35,7 @@ export default function DiscoveryIntro({ onComplete }) {
     if (!running || skip) return;
 
     const timeout = setTimeout(() => {
+      setIndex(prev => prev + 1);
       setIndex((prev) => prev + 1);
     }, 4000);
 
@@ -48,14 +53,15 @@ export default function DiscoveryIntro({ onComplete }) {
   }, [index, onComplete]);
 
   return (
+    <motion.div className="fixed inset-0 flex items-center justify-center overflow-hidden bg-black">
+      <video
     <motion.div
-      className="fixed inset-0 isolate z-[100] flex items-center justify-center overflow-hidden bg-black"
+      className="fixed inset-0 z-[100] flex items-center justify-center overflow-hidden bg-black"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 1.2, ease: 'easeOut' }}
     >
-      <div className="absolute inset-0 bg-black" />
       <motion.video
         className="absolute inset-0 h-full w-full object-cover"
         autoPlay
@@ -69,8 +75,8 @@ export default function DiscoveryIntro({ onComplete }) {
         transition={{ duration: 4, ease: 'easeOut' }}
       />
 
+      <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-black/90" />
       <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/40 to-black/90" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_40%,rgba(236,72,153,0.35),transparent_55%),radial-gradient(circle_at_70%_45%,rgba(56,189,248,0.35),transparent_55%),radial-gradient(circle_at_80%_70%,rgba(249,115,22,0.25),transparent_60%)]" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.08)_0%,rgba(0,0,0,0.9)_55%,rgba(0,0,0,1)_75%)]" />
       <div className="absolute top-0 left-0 right-0 h-24 bg-black/90" />
       <div className="absolute bottom-0 left-0 right-0 h-24 bg-black/90" />
@@ -79,17 +85,36 @@ export default function DiscoveryIntro({ onComplete }) {
         {index < WORDS.length && (
           <motion.div
             key={WORDS[index]}
-            initial={{ opacity: 0, y: 18, filter: 'blur(6px)' }}
-            animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-            exit={{ opacity: 0, y: -18, filter: 'blur(6px)' }}
-            transition={{ duration: 2.6, ease: 'easeOut' }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 1.4 }}
+            className="relative z-10 max-w-xl rounded-3xl border border-white/20 bg-gradient-to-br from-white/5 via-white/0 to-transparent p-8 text-center shadow-lg shadow-cyan-500/20"
+            transition={{ duration: 2, ease: 'easeOut' }}
             className="relative z-10 flex w-full flex-col items-center justify-center px-6 text-center"
           >
             <div className="mb-6 h-px w-20 bg-gradient-to-r from-transparent via-white/60 to-transparent" />
             <p className="mx-auto w-full max-w-4xl text-center font-serif text-2xl italic tracking-[0.2em] text-white/85 drop-shadow-[0_2px_12px_rgba(0,0,0,0.6)] md:text-3xl">
               {WORDS[index]}
+            <p className="mx-auto font-serif text-[0.65rem] tracking-[0.6em] uppercase text-white/60 mb-6">
+              Discovery / Observation / Manifest
             </p>
-            <div className="mt-6 h-px w-32 bg-gradient-to-r from-transparent via-white/40 to-transparent" />
+            <div className="relative mx-auto max-w-4xl px-6">
+              <span className="absolute inset-0 translate-x-1 -translate-y-1 text-4xl md:text-6xl lg:text-7xl font-semibold text-cyan-400/20 blur-sm">
+                {WORDS[index]}
+              </span>
+              <span className="absolute inset-0 -translate-x-1 translate-y-1 text-4xl md:text-6xl lg:text-7xl font-semibold text-fuchsia-400/20 mix-blend-screen">
+                {WORDS[index]}
+              </span>
+              <p className="relative font-serif text-4xl md:text-6xl lg:text-7xl font-semibold tracking-[0.08em] text-transparent bg-clip-text bg-gradient-to-br from-white via-cyan-100 to-fuchsia-200 drop-shadow-[0_0_45px_rgba(56,189,248,0.6)]">
+                {WORDS[index]}
+              </p>
+            </div>
+            <div className="mt-6 flex items-center gap-3 text-[0.65rem] tracking-[0.5em] uppercase text-white/40">
+              <span className="h-px w-10 bg-white/30" />
+              <span>Opening sequence</span>
+              <span className="h-px w-10 bg-white/30" />
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -104,14 +129,13 @@ export default function DiscoveryIntro({ onComplete }) {
       />
       <div className="pointer-events-none absolute inset-0 opacity-30 mix-blend-screen bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.15)_0%,rgba(0,0,0,0)_55%)]" />
 
-      <div className="relative z-10 flex w-full items-end justify-between px-6 pb-6 text-[0.55rem] text-white uppercase tracking-[0.5em]">
-        <div className="flex items-center gap-6">
-          <button className="text-white/60 hover:text-white transition" onClick={handleComplete}>
-            Skip
-          </button>
-          <button className="text-white/40 hover:text-white/80 transition" onClick={handleReplay}>
-            Replay
-          </button>
+      <div className="relative z-10 flex w-full items-end justify-between px-8 pb-10 text-xs text-white uppercase tracking-[0.35em]">
+        <button className="text-white/80 hover:text-white" onClick={handleComplete}>
+        <button className="text-white/80 hover:text-white transition" onClick={handleComplete}>
+          Skip Observation
+        </button>
+        <div className="flex gap-4">
+          <span className="animate-pulse">Active Signal: High</span>
         </div>
       </div>
 
