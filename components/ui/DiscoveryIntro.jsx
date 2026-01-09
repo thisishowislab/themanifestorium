@@ -25,6 +25,12 @@ export default function DiscoveryIntro({ onComplete }) {
     onComplete?.();
   };
 
+  const handleReplay = () => {
+    setIndex(0);
+    setSkip(false);
+    setRunning(true);
+  };
+
   useEffect(() => {
     if (!running || skip) return;
 
@@ -41,7 +47,7 @@ export default function DiscoveryIntro({ onComplete }) {
       const endFade = setTimeout(() => {
         setRunning(false);
         onComplete?.();
-      }, 2200);
+      }, 3200);
       return () => clearTimeout(endFade);
     }
   }, [index, onComplete]);
@@ -87,8 +93,8 @@ export default function DiscoveryIntro({ onComplete }) {
             transition={{ duration: 2, ease: 'easeOut' }}
             className="relative z-10 flex w-full flex-col items-center justify-center px-6 text-center"
           >
-            <p className="text-xs tracking-[0.2em] uppercase text-white/60 mb-4">Discovery / Observation / Manifest</p>
-            <p className="text-3xl font-light text-white md:text-4xl">
+            <div className="mb-6 h-px w-20 bg-gradient-to-r from-transparent via-white/60 to-transparent" />
+            <p className="mx-auto w-full max-w-4xl text-center font-serif text-2xl italic tracking-[0.2em] text-white/85 drop-shadow-[0_2px_12px_rgba(0,0,0,0.6)] md:text-3xl">
               {WORDS[index]}
             <p className="mx-auto font-serif text-[0.65rem] tracking-[0.6em] uppercase text-white/60 mb-6">
               Discovery / Observation / Manifest
