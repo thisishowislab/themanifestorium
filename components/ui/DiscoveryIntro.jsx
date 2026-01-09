@@ -8,10 +8,6 @@ const WORDS = [
   "Beyond the edge of everything known…",
   "a quiet kind of magic remains…",
   "The Manifestorium. where forgotten things find their value."
-  'Somewhere in the desert….',
-  'Beyond the edge of everything known…',
-  'a quiet kind of magic remains…',
-  'The Manifestorium. where forgotten things find their value.'
 ];
 
 export default function DiscoveryIntro({ onComplete }) {
