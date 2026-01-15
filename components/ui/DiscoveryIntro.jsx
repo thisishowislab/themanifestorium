@@ -1,102 +1,101 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 
+// --- INTRO SCREENS ---
 const screens = [
   {
     text: "Somewhere in the desert...",
     effect: "glitch",
+    showEnter: false,
   },
   {
     text: "beyond the edge of everything known...",
     effect: "glitch",
+    showEnter: false,
   },
   {
     text: "a quiet kind of magic awaits...",
     effect: "glitch",
+    showEnter: false,
   },
   {
-    text: (
-      <div>
-        <span className="manifestorium-title rainbow-text">
-          THE MANIFESTORIUM
-        </span>
-        <div className="rainbow-line" />
-        <span className="manifestorium-tagline">
-          Where forgotten things find their voice
-        </span>
-        <button className="intro-enter-btn" tabIndex={0}>ENTER</button>
-      </div>
-    ),
+    text: null,
     effect: "rainbow",
-  },
+    showEnter: true,
+  }
 ];
 
 export default function DiscoveryIntro({ onFinish }) {
   const [screenIdx, setScreenIdx] = useState(0);
   const [visible, setVisible] = useState(true);
-  const [fadeState, setFadeState] = useState("in");
+  const [fade, setFade] = useState(true); // fade in/out transition
+  const timerRef = useRef();
 
-  // Fade in/out between screens
+  // Timing and transitions
   useEffect(() => {
-    if (!visible) return;
-    if (fadeState === "out") return;
+    // Don't auto-advance on last screen
+    if (!visible || screens[screenIdx].showEnter) return;
+    timerRef.current = setTimeout(() => {
+      setFade(false);
+      setTimeout(() => {
+        setScreenIdx(idx => idx + 1);
+        setFade(true);
+      }, 400); // fade out duration
+    }, 1500);
+    return () => clearTimeout(timerRef.current);
+  }, [screenIdx, visible]);
 
-    const time =
-      screenIdx === screens.length - 1
-        ? 2500
-        : 1400;
-    const timer = setTimeout(() => setFadeState("out"), time);
+  // Clean up on unmount
+  useEffect(() => () => clearTimeout(timerRef.current), []);
 
-    return () => clearTimeout(timer);
-  }, [screenIdx, fadeState, visible]);
-
-  useEffect(() => {
-    if (fadeState !== "out") return;
-    if (!visible) return;
-
-    if (screenIdx < screens.length - 1) {
-      const timer = setTimeout(() => {
-        setScreenIdx((i) => i + 1);
-        setFadeState("in");
-      }, 430);
-      return () => clearTimeout(timer);
-    }
-  }, [fadeState, screenIdx, visible]);
-
-  function handleFinish() {
+  // Handler for both skip and enter
+  function finish() {
     setVisible(false);
-    if (onFinish) onFinish();
+    setTimeout(() => {
+      if (onFinish) onFinish();
+    }, 350);
   }
 
-  useEffect(() => {
-    // ENTER button on last screen
-    if (screenIdx === screens.length - 1) {
-      const btn = document.querySelector(".intro-enter-btn");
-      if (btn) {
-        btn.onclick = handleFinish;
-        btn.onkeydown = (e) => {
-          if (e.key === "Enter" || e.key === " ") handleFinish();
-        };
-      }
-    }
-  });
-
-  // Dust particles (subtle, slow)
+  // Subtle dust particles (stars)
   const dustParticles = Array.from({ length: 24 }).map((_, i) => ({
     left: Math.random() * 100 + "%",
     top: Math.random() * 100 + "%",
-    size: Math.random() * 1.2 + 0.7,
-    opacity: Math.random() * 0.18 + 0.08,
+    size: Math.random() * 1.3 + 0.8,
+    opacity: Math.random() * 0.2 + 0.08,
     duration: Math.random() * 18 + 12,
     delay: Math.random() * 10,
     key: i,
   }));
 
+  // For rainbow/title/tagline screen
+  function renderFinalScreen() {
+    return (
+      <div>
+        <span className="manifestorium-title rainbow-text">THE MANIFESTORIUM</span>
+        <div className="rainbow-line" />
+        <span className="manifestorium-tagline">
+          Where forgotten things find their voice
+        </span>
+        <div style={{marginTop: "2.1em"}}>
+          <button
+            className="intro-enter-btn"
+            tabIndex={0}
+            onClick={finish}
+            autoFocus
+          >
+            ENTER
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (!visible) return null;
 
   const isGlitch = screens[screenIdx].effect === "glitch";
+  const showEnter = screens[screenIdx].showEnter;
 
   return (
-    <div className={`discovery-intro-bg${isGlitch ? " glitch-bg" : ""}`}>
+    <div className={`discovery-intro-bg${isGlitch ? " glitch-bg" : ""}${!fade ? " fade-out-bg" : ""}`}>
       {/* Dust / Stars */}
       <div className="dust-layer">
         {dustParticles.map((p) => (
@@ -120,15 +119,15 @@ export default function DiscoveryIntro({ onFinish }) {
         <div
           className={[
             "intro-text",
-            isGlitch ? "glitch" : "",
-            fadeState === "in" ? "fade-in" : "fade-out",
+            isGlitch ? "glitch" : "rainbow",
+            fade ? "fade-in" : "fade-out"
           ].join(" ")}
         >
-          {screens[screenIdx].text}
+          {showEnter ? renderFinalScreen() : screens[screenIdx].text}
         </div>
       </div>
       {/* SKIP button (always visible, bottom right) */}
-      <button className="intro-skip-btn" onClick={handleFinish}>
+      <button className="intro-skip-btn" onClick={finish}>
         Skip
       </button>
       {/* Styles */}
@@ -148,7 +147,10 @@ export default function DiscoveryIntro({ onFinish }) {
           color: #fff;
           overflow: hidden;
           box-shadow: 0 0 120px 40px #000 inset;
-          transition: opacity 0.8s;
+          transition: opacity 0.6s;
+        }
+        .fade-out-bg {
+          opacity: 0;
         }
         .glitch-bg {
           animation: flickerbg 1.2s steps(1) infinite;
@@ -190,7 +192,7 @@ export default function DiscoveryIntro({ onFinish }) {
         }
         .fade-out {
           opacity: 1;
-          animation: fadeOut 0.43s forwards;
+          animation: fadeOut 0.4s forwards;
         }
         @keyframes fadeIn {
           to { opacity: 1; }
@@ -317,7 +319,6 @@ export default function DiscoveryIntro({ onFinish }) {
           .intro-enter-btn { font-size: 1em; padding: 0.3em 1.6em; }
         }
       `}</style>
-      {/* Google Fonts */}
       <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;700&family=Cinzel:wght@700&display=swap" rel="stylesheet" />
     </div>
   );
