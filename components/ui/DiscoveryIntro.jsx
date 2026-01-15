@@ -39,7 +39,6 @@ export default function DiscoveryIntro({ onFinish }) {
       const timer = setTimeout(() => setScreenIdx(screenIdx + 1), 1800);
       return () => clearTimeout(timer);
     } else {
-      // Last screen, wait 3s then finish
       const timer = setTimeout(() => handleFinish(), 3000);
       return () => clearTimeout(timer);
     }
@@ -110,7 +109,7 @@ export default function DiscoveryIntro({ onFinish }) {
           width: 100vw;
           height: 100vh;
           background: radial-gradient(ellipse at 50% 60%, rgba(32,10,50,0.97) 60%, rgba(15,0,40,0.93) 100%);
-          backdrop-filter: blur(6px) brightness(0.96);
+          backdrop-filter: blur(8px) brightness(0.96);
           display: flex;
           align-items: center;
           justify-content: center;
@@ -123,11 +122,12 @@ export default function DiscoveryIntro({ onFinish }) {
           position: relative;
           z-index: 10;
           text-align: center;
-          background: rgba(24, 8, 44, 0.44);
-          border-radius: 32px;
-          padding: 3.2em 2em 2.5em 2em;
-          box-shadow: 0 12px 64px 0 #0a0028cc, 0 1px 0 #fff1;
-          min-width: 340px;
+          /* Remove box and background! */
+          background: none;
+          box-shadow: none;
+          border-radius: 0;
+          padding: 0;
+          min-width: 0;
         }
         .intro-text {
           font-family: 'Cinzel', serif;
@@ -140,20 +140,20 @@ export default function DiscoveryIntro({ onFinish }) {
           filter: drop-shadow(0 2px 16px #000a);
         }
         .manifestorium-title {
-          font-size: 3.2rem;
+          font-size: 4rem;
           font-family: 'Cinzel', serif;
           font-weight: 900;
           letter-spacing: 2.5px;
-          margin-bottom: 0.2em;
+          margin-bottom: 0.1em;
           display: block;
-          line-height: 1.1;
-          text-shadow: 0 2px 32px #fff8, 0 0 2px #b729ffcc;
+          line-height: 1.05;
+          text-shadow: 0 2px 36px #fff8, 0 0 2px #b729ffcc;
         }
         .manifestorium-tagline {
-          font-size: 1.38rem;
+          font-size: 1.2rem;
           font-family: 'Inter', sans-serif;
           font-weight: 400;
-          margin-top: 0.8em;
+          margin-top: 1em;
           display: block;
           opacity: 0.82;
           filter: blur(0.12px);
