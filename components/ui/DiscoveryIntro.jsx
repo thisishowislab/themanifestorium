@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 
-// You can move these colors/fonts to your global CSS if you want!
 const screens = [
   {
     text: "Somewhere in the desert...",
@@ -16,13 +15,15 @@ const screens = [
   },
   {
     text: (
-      <>
-        <span className="rainbow-text manifestorium-title">The Manifestorium</span>
+      <div>
+        <span className="manifestorium-title rainbow-text">
+          The Manifestorium
+        </span>
         <br />
-        <span className="rainbow-text manifestorium-subtitle">
+        <span className="manifestorium-tagline rainbow-fade">
           Where forgotten things find their way.
         </span>
-      </>
+      </div>
     ),
     effect: "rainbow",
   },
@@ -32,7 +33,6 @@ export default function DiscoveryIntro({ onFinish }) {
   const [screenIdx, setScreenIdx] = useState(0);
   const [visible, setVisible] = useState(true);
 
-  // Advance screens every 1.8 seconds, except last one (3s)
   useEffect(() => {
     if (!visible) return;
     if (screenIdx < screens.length - 1) {
@@ -90,15 +90,16 @@ export default function DiscoveryIntro({ onFinish }) {
           className={
             screens[screenIdx].effect === "glitch"
               ? "intro-text glitch"
-              : "intro-text"
+              : "intro-text rainbow"
           }
         >
           {screens[screenIdx].text}
         </div>
-        <button className="intro-skip-btn" onClick={handleFinish}>
-          Skip
-        </button>
       </div>
+      {/* Skip Button */}
+      <button className="intro-skip-btn" onClick={handleFinish}>
+        ⏭ Skip
+      </button>
       {/* Styles */}
       <style jsx>{`
         .discovery-intro-bg {
@@ -108,22 +109,25 @@ export default function DiscoveryIntro({ onFinish }) {
           left: 0;
           width: 100vw;
           height: 100vh;
-          background: rgba(32, 10, 50, 0.95);
-          backdrop-filter: blur(3px);
+          background: radial-gradient(ellipse at 50% 60%, rgba(32,10,50,0.97) 60%, rgba(15,0,40,0.93) 100%);
+          backdrop-filter: blur(6px) brightness(0.96);
           display: flex;
           align-items: center;
           justify-content: center;
           color: #fff;
           overflow: hidden;
+          box-shadow: 0 0 120px 40px #000 inset;
+          transition: opacity 0.8s;
         }
         .discovery-intro-content {
           position: relative;
           z-index: 10;
           text-align: center;
-          background: rgba(49, 18, 70, 0.7);
-          box-shadow: 0 8px 32px rgba(20, 0, 40, 0.45);
-          border-radius: 28px;
-          padding: 2.6em 1.5em 2.4em 1.5em;
+          background: rgba(24, 8, 44, 0.44);
+          border-radius: 32px;
+          padding: 3.2em 2em 2.5em 2em;
+          box-shadow: 0 12px 64px 0 #0a0028cc, 0 1px 0 #fff1;
+          min-width: 340px;
         }
         .intro-text {
           font-family: 'Cinzel', serif;
@@ -133,21 +137,26 @@ export default function DiscoveryIntro({ onFinish }) {
           margin-bottom: 1em;
           line-height: 1.25;
           transition: all 0.3s;
+          filter: drop-shadow(0 2px 16px #000a);
         }
         .manifestorium-title {
-          font-size: 2.9rem;
+          font-size: 3.2rem;
           font-family: 'Cinzel', serif;
           font-weight: 900;
-          letter-spacing: 3px;
-          margin-bottom: 0.3em;
+          letter-spacing: 2.5px;
+          margin-bottom: 0.2em;
           display: block;
+          line-height: 1.1;
+          text-shadow: 0 2px 32px #fff8, 0 0 2px #b729ffcc;
         }
-        .manifestorium-subtitle {
-          font-size: 1.2rem;
+        .manifestorium-tagline {
+          font-size: 1.38rem;
           font-family: 'Inter', sans-serif;
-          font-weight: 500;
-          margin-top: 0.6em;
+          font-weight: 400;
+          margin-top: 0.8em;
           display: block;
+          opacity: 0.82;
+          filter: blur(0.12px);
         }
         .rainbow-text {
           background: linear-gradient(90deg, #ffd700 0%, #ff6bcb 33%, #5cfaff 67%, #e0ff66 100%);
@@ -155,7 +164,15 @@ export default function DiscoveryIntro({ onFinish }) {
           -webkit-text-fill-color: transparent;
           background-clip: text;
           text-fill-color: transparent;
-          filter: drop-shadow(0 0 10px #fff8);
+          filter: drop-shadow(0 0 14px #fff8);
+        }
+        .rainbow-fade {
+          background: linear-gradient(90deg, #ffe066, #b29cff, #ea82ff, #45f5e6, #ffe066);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+          text-fill-color: transparent;
+          filter: drop-shadow(0 0 7px #fff4);
         }
         .glitch {
           position: relative;
@@ -186,36 +203,40 @@ export default function DiscoveryIntro({ onFinish }) {
         }
         @keyframes dust-move {
           0% { transform: translateY(0); }
-          100% { transform: translateY(24vh); opacity: 0.2; }
+          100% { transform: translateY(28vh); opacity: 0.2; }
         }
         .intro-skip-btn {
-          position: absolute;
-          bottom: 1.6em;
-          right: 1.8em;
-          background: rgba(24, 8, 44, 0.8);
+          position: fixed;
+          bottom: 3vh;
+          right: 5vw;
+          background: rgba(32, 10, 50, 0.15);
           color: #ffd700;
           font-family: 'Inter', sans-serif;
           font-weight: 700;
-          font-size: 1em;
-          border: none;
-          border-radius: 8px;
-          padding: 0.5em 1.4em;
+          font-size: 1.2em;
+          border: 2px solid #ffd70055;
+          border-radius: 30px;
+          padding: 0.38em 1.3em 0.38em 1em;
           cursor: pointer;
-          opacity: 0.85;
-          transition: background 0.2s, color 0.2s;
+          opacity: 0.55;
+          transition: background 0.15s, color 0.18s, opacity 0.25s;
+          z-index: 10001;
+          box-shadow: 0 2px 22px #000a;
         }
         .intro-skip-btn:hover {
-          background: #ffd700;
+          background: #ffd70022;
           color: #462B7A;
+          opacity: 1;
         }
         @media (max-width: 600px) {
-          .intro-text { font-size: 1.1rem; }
-          .manifestorium-title { font-size: 1.4rem; }
-          .discovery-intro-content { padding: 1.3em 0.6em 1.2em 0.6em; }
+          .intro-text { font-size: 1.2rem; }
+          .manifestorium-title { font-size: 1.6rem; }
+          .discovery-intro-content { padding: 1.3em 0.6em 1.2em 0.6em; min-width: 70vw; }
+          .intro-skip-btn { font-size: 1em; padding: 0.3em 1em 0.3em 0.8em; }
         }
       `}</style>
       {/* Google Fonts */}
-      <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Inter:wght@500;700&display=swap" rel="stylesheet" />
+      <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Inter:wght@400;700&display=swap" rel="stylesheet" />
     </div>
   );
 }
