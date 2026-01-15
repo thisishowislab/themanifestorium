@@ -41,8 +41,11 @@ export default function ManifestoriumSite() {
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [formData, setFormData] = useState({ name: '', email: '', message: '' });
   const [formStatus, setFormStatus] = useState('');
-  const [showIntro, setShowIntro] = useState(true);
+ const [showIntro, setShowIntro] = useState(true);
 
+function handleIntroFinish() {
+  setShowIntro(false);
+}
   // Shop search
   const [productQuery, setProductQuery] = useState('');
 
@@ -224,7 +227,7 @@ export default function ManifestoriumSite() {
   return (
     <>
       <AnimatePresence>
-        {showIntro && <DiscoveryIntro onComplete={() => setShowIntro(false)} />}
+        {showIntro && <DiscoveryIntro onFinish={() => setShowIntro(false)} />}
       </AnimatePresence>
 
       <div
